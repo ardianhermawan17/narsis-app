@@ -1,0 +1,23 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type User {
+  id: String!
+  username: String!
+  email: String!
+  displayName: String
+  bio: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Query {
+  me: User
+}
+
+type Mutation {
+  register(username: String!, email: String!, password: String!): User
+  login(usernameOrEmail: String!, password: String!): String!
+}

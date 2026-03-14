@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         stopOnFailure="false">
+
+    <testsuites>
+        <testsuite name="Auth">
+            <file>tests/AuthTest.php</file>
+        </testsuite>
+    </testsuites>
+
+    <!--
+        GROUP 1 - Logic (Inbound) tests: pure unit tests, no I/O needed.
+        GROUP 2 - GraphQL (Outbound) tests: require running backend + seed.
+                  Auto-skip when endpoint is unreachable.
+    -->
+    <php>
+        <env name="GRAPHQL_TEST_URL" value="http://localhost:8080/graphql"/>
+    </php>
+
+</phpunit>
