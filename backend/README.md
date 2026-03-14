@@ -59,6 +59,15 @@ docker-compose exec -T narsis-app-postgress psql -U narsis -d narsisdb < backend
 - `POST /api/refresh-token`
   - Body: `{ "refreshToken": "..." }`
   - Returns `200` with rotated token pair
+- `POST /api/posts`
+  - Header: `Authorization: Bearer <accessToken>`
+  - Body:
+    - `caption`: optional string
+    - `visibility`: `public` or `private`
+    - `images`: array of `{ imageBase64, mimeType?, altText?, isPrimary? }`
+  - Returns `201` with post payload including persisted images
+- `GET /api/posts?limit=20`
+  - Returns latest posts with nested image metadata
 - `GET /api/profile`
   - Header: `Authorization: Bearer <accessToken>`
   - Returns authenticated user profile
@@ -74,13 +83,18 @@ Login and register are also available as GraphQL mutations:
 - `mutation { register(username: "john", email: "john@mail.com", password: "secret123") { id username email } }`
 - `mutation { login(usernameOrEmail: "john", password: "secret123") { accessToken refreshToken tokenType expiresIn } }`
 - `mutation { refreshToken(refreshToken: "...") { accessToken refreshToken tokenType expiresIn } }`
+- `mutation CreatePost($images:[PostImageInput!]!) { createPost(caption: "hello", visibility: "public", images: $images) { id userId caption images { id storageKey mimeType sizeBytes } } }`
+- `query { posts(limit: 20) { id caption visibility images { id storageKey } } }`
 
 Resource gateway variant for auth domain:
 
 - `POST /v1/auth` accepts persisted default auth query when request body is empty
 - `POST /v1/auth` also accepts explicit query payload, including `refreshToken` mutation
+- `POST /v1/posts` returns persisted posts query with image metadata
 
 ## Notes
 
 - Access token uses short TTL (`JWT_TTL`, default 900 seconds).
 - Refresh token is session-backed using `sessions` table and rotates on each refresh request.
+- IDs for sessions, posts, images, and image_fingerprints are generated with Snowflake generator.
+- Images are stored in local filesystem under `backend/storage/images/*` and fingerprinted into `image_fingerprints`.

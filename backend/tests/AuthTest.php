@@ -152,7 +152,17 @@ final class AuthTest extends TestCase
         $repo->method('findByUsernameOrEmail')->willReturn($user);
 
         $sessions = $this->createMock(SessionRepositoryInterface::class);
-        $sessions->expects(self::once())->method('createSession');
+        $sessions->expects(self::once())
+            ->method('createSession')
+            ->with(
+                self::callback(static function (string $sessionId): bool {
+                    return preg_match('/^[0-9]+$/', $sessionId) === 1;
+                }),
+                self::identicalTo($user->id()),
+                self::isType('string'),
+                self::anything(),
+                self::isInstanceOf(\DateTimeImmutable::class)
+            );
 
         $handler = new LoginUserHandler($repo, $jwt, $sessions, new SnowflakeGenerator(1));
         $result  = $handler->handle(new LoginUserCommand('testuser', 'correct-password'));

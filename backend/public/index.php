@@ -60,6 +60,7 @@ try {
 
     $systemRoutes = require __DIR__ . '/routes/system.php';
     $authRoutes = require __DIR__ . '/routes/auth.php';
+    $postRoutes = require __DIR__ . '/routes/posts.php';
     $graphQlRoutes = require __DIR__ . '/routes/graphql.php';
 
     $response = $systemRoutes($method, $path);
@@ -69,6 +70,12 @@ try {
     }
 
     $response = $authRoutes($method, $path, $payload, $services, 'resolveAuthorizationHeader');
+    if ($response !== null) {
+        emitResponse($response);
+        exit;
+    }
+
+    $response = $postRoutes($method, $path, $payload, $services, 'resolveAuthorizationHeader');
     if ($response !== null) {
         emitResponse($response);
         exit;

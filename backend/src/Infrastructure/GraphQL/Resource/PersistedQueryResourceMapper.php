@@ -17,7 +17,7 @@ final class PersistedQueryResourceMapper implements ResourceQueryMapperInterface
             // Example persisted queries for /v1/<resource> mapping.
             'auth' => 'query AuthGateway { me { id username email displayName bio createdAt updatedAt } }',
             'users' => 'query UsersGateway { users { id username email } }',
-            'posts' => 'query PostsGateway { posts { id caption createdAt } }',
+            'posts' => 'query PostsGateway { posts { id userId caption visibility createdAt updatedAt images { id storageKey mimeType width height sizeBytes altText isPrimary createdAt } } }',
             'comments' => 'query CommentsGateway { comments { id content createdAt } }',
             'likes' => 'query LikesGateway { likes { id postId userId } }',
             'profile' => 'query ProfileGateway { me { id username email displayName bio createdAt updatedAt } }',
