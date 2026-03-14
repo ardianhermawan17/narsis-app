@@ -19,7 +19,7 @@ cp .env.example .env
 Required keys:
 
 - `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
-- `JWT_SECRET`, `JWT_TTL`
+- `JWT_SECRET`, `JWT_TTL`, `JWT_REFRESH_TTL`
 - `SERVER_ID`
 
 ## Build and run (from repository root)
@@ -55,7 +55,10 @@ docker-compose exec -T narsis-app-postgress psql -U narsis -d narsisdb < backend
   - Returns `201` with created user payload
 - `POST /api/login`
   - Body: `{ "usernameOrEmail": "john", "password": "secret123" }`
-  - Returns `200` with `{ "accessToken": "..." }`
+  - Returns `200` with `{ "accessToken": "...", "refreshToken": "...", "tokenType": "Bearer", "expiresIn": 900 }`
+- `POST /api/refresh-token`
+  - Body: `{ "refreshToken": "..." }`
+  - Returns `200` with rotated token pair
 - `GET /api/profile`
   - Header: `Authorization: Bearer <accessToken>`
   - Returns authenticated user profile
@@ -69,9 +72,15 @@ docker-compose exec -T narsis-app-postgress psql -U narsis -d narsisdb < backend
 Login and register are also available as GraphQL mutations:
 
 - `mutation { register(username: "john", email: "john@mail.com", password: "secret123") { id username email } }`
-- `mutation { login(usernameOrEmail: "john", password: "secret123") }`
+- `mutation { login(usernameOrEmail: "john", password: "secret123") { accessToken refreshToken tokenType expiresIn } }`
+- `mutation { refreshToken(refreshToken: "...") { accessToken refreshToken tokenType expiresIn } }`
+
+Resource gateway variant for auth domain:
+
+- `POST /v1/auth` accepts persisted default auth query when request body is empty
+- `POST /v1/auth` also accepts explicit query payload, including `refreshToken` mutation
 
 ## Notes
 
 - Access token uses short TTL (`JWT_TTL`, default 900 seconds).
-- Refresh token persistence is not implemented yet. TODO: add session-based refresh tokens using `sessions` table.
+- Refresh token is session-backed using `sessions` table and rotates on each refresh request.

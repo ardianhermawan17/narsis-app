@@ -9,7 +9,9 @@ use App\Interfaces\GraphQL\Query\AuthQueryType;
 use App\Interfaces\GraphQL\Error\GraphQlErrorHandler;
 use App\Interfaces\GraphQL\Resolver\LoginResolver;
 use App\Interfaces\GraphQL\Resolver\MeResolver;
+use App\Interfaces\GraphQL\Resolver\RefreshTokenResolver;
 use App\Interfaces\GraphQL\Resolver\RegisterResolver;
+use App\Interfaces\GraphQL\Type\AuthTokenTypeFactory;
 use App\Interfaces\GraphQL\Type\UserTypeFactory;
 use App\Interfaces\Http\Controller\AuthController;
 use App\Interfaces\Http\Middleware\JwtAuthMiddleware;
@@ -23,10 +25,18 @@ final class AuthSchemaFactory
         $meResolver = new MeResolver($authController, $authMiddleware, $errorHandler);
         $registerResolver = new RegisterResolver($authController, $errorHandler);
         $loginResolver = new LoginResolver($authController, $errorHandler);
+        $refreshTokenResolver = new RefreshTokenResolver($authController, $errorHandler);
 
         $userType = UserTypeFactory::create();
+        $authTokenType = AuthTokenTypeFactory::create();
         $queryType = AuthQueryType::create($userType, $meResolver);
-        $mutationType = AuthMutationType::create($userType, $registerResolver, $loginResolver);
+        $mutationType = AuthMutationType::create(
+            $userType,
+            $authTokenType,
+            $registerResolver,
+            $loginResolver,
+            $refreshTokenResolver
+        );
 
         return new Schema([
             'query' => $queryType,

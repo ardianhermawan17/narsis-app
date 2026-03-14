@@ -13,11 +13,19 @@ type User {
   updatedAt: String!
 }
 
+type AuthTokenPair {
+  accessToken: String!
+  refreshToken: String!
+  tokenType: String!
+  expiresIn: Int!
+}
+
 type Query {
   me: User
 }
 
 type Mutation {
   register(username: String!, email: String!, password: String!): User
-  login(usernameOrEmail: String!, password: String!): String!
+  login(usernameOrEmail: String!, password: String!): AuthTokenPair!
+  refreshToken(refreshToken: String!): AuthTokenPair!
 }

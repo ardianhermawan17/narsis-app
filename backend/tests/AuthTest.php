@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Application\Command\RefreshToken\RefreshTokenCommand;
+use App\Application\Command\RefreshToken\RefreshTokenHandler;
+use App\Domain\Session\Repository\SessionRepositoryInterface;
 use App\Application\Command\LoginUser\LoginUserCommand;
 use App\Application\Command\LoginUser\LoginUserHandler;
 use App\Application\Command\RegisterUser\RegisterUserCommand;
@@ -52,7 +55,7 @@ final class AuthTest extends TestCase
 
     private function makeJwtProvider(): JwtProvider
     {
-        return new JwtProvider('unit-test-secret-key-32-chars!!', 900);
+        return new JwtProvider('unit-test-secret-key-32-chars!!', 900, 7200);
     }
 
     // =========================================================================
@@ -140,7 +143,7 @@ final class AuthTest extends TestCase
         $handler->handle(new RegisterUserCommand('dup', 'dup@example.com', 'pass'));
     }
 
-    public function testLoginUserHandlerReturnsAccessToken(): void
+    public function testLoginUserHandlerReturnsAccessAndRefreshTokens(): void
     {
         $jwt  = $this->makeJwtProvider();
         $user = $this->makeTestUser();
@@ -148,14 +151,23 @@ final class AuthTest extends TestCase
         $repo = $this->createMock(UserRepositoryInterface::class);
         $repo->method('findByUsernameOrEmail')->willReturn($user);
 
-        $handler = new LoginUserHandler($repo, $jwt);
+        $sessions = $this->createMock(SessionRepositoryInterface::class);
+        $sessions->expects(self::once())->method('createSession');
+
+        $handler = new LoginUserHandler($repo, $jwt, $sessions, new SnowflakeGenerator(1));
         $result  = $handler->handle(new LoginUserCommand('testuser', 'correct-password'));
 
         self::assertArrayHasKey('accessToken', $result, 'Login response should include accessToken.');
+        self::assertArrayHasKey('refreshToken', $result, 'Login response should include refreshToken.');
         self::assertNotEmpty($result['accessToken'], 'Access token should not be empty for valid login.');
+        self::assertNotEmpty($result['refreshToken'], 'Refresh token should not be empty for valid login.');
 
         $claims = $jwt->verifyAccessToken($result['accessToken']);
         self::assertSame($user->id(), $claims['sub'], 'Token subject should match logged-in user id.');
+
+        $refreshClaims = $jwt->verifyRefreshToken($result['refreshToken']);
+        self::assertSame($user->id(), $refreshClaims['sub'], 'Refresh token subject should match logged-in user id.');
+        self::assertNotEmpty($refreshClaims['sid'], 'Refresh token should include session id.');
     }
 
     public function testLoginUserHandlerRejectsWrongPassword(): void
@@ -167,7 +179,12 @@ final class AuthTest extends TestCase
         $repo = $this->createMock(UserRepositoryInterface::class);
         $repo->method('findByUsernameOrEmail')->willReturn($user);
 
-        $handler = new LoginUserHandler($repo, $this->makeJwtProvider());
+        $handler = new LoginUserHandler(
+            $repo,
+            $this->makeJwtProvider(),
+            $this->createMock(SessionRepositoryInterface::class),
+            new SnowflakeGenerator(1)
+        );
         $handler->handle(new LoginUserCommand('testuser', 'wrong-password'));
     }
 
@@ -179,8 +196,36 @@ final class AuthTest extends TestCase
         $repo = $this->createMock(UserRepositoryInterface::class);
         $repo->method('findByUsernameOrEmail')->willReturn(null);
 
-        $handler = new LoginUserHandler($repo, $this->makeJwtProvider());
+        $handler = new LoginUserHandler(
+            $repo,
+            $this->makeJwtProvider(),
+            $this->createMock(SessionRepositoryInterface::class),
+            new SnowflakeGenerator(1)
+        );
         $handler->handle(new LoginUserCommand('nobody', 'pass'));
+    }
+
+    public function testRefreshTokenHandlerReturnsNewTokenPair(): void
+    {
+        $jwt = $this->makeJwtProvider();
+        $user = $this->makeTestUser();
+        $sessionId = 'session-001';
+
+        $oldRefreshToken = $jwt->createRefreshToken($user->id(), $sessionId);
+
+        $sessions = $this->createMock(SessionRepositoryInterface::class);
+        $sessions->method('hasActiveSession')->willReturn(true);
+        $sessions->method('rotateRefreshToken')->willReturn(true);
+
+        $users = $this->createMock(UserRepositoryInterface::class);
+        $users->method('findById')->willReturn($user);
+
+        $handler = new RefreshTokenHandler($sessions, $users, $jwt);
+        $result = $handler->handle(new RefreshTokenCommand($oldRefreshToken));
+
+        self::assertNotEmpty($result['accessToken'], 'Refresh flow should return a new access token.');
+        self::assertNotEmpty($result['refreshToken'], 'Refresh flow should return a rotated refresh token.');
+        self::assertSame('Bearer', $result['tokenType'], 'Refresh flow should return Bearer token type.');
     }
 
     // =========================================================================
@@ -196,11 +241,32 @@ final class AuthTest extends TestCase
         return is_string($env) && $env !== '' ? $env : 'http://localhost:8080/graphql';
     }
 
+    private function resourceUrl(string $resource): string
+    {
+        $graphqlUrl = $this->graphqlUrl();
+        $parts = parse_url($graphqlUrl);
+
+        $scheme = (string) ($parts['scheme'] ?? 'http');
+        $host = (string) ($parts['host'] ?? 'localhost');
+        $port = isset($parts['port']) ? ':' . (string) $parts['port'] : '';
+
+        return sprintf('%s://%s%s/v1/%s', $scheme, $host, $port, $resource);
+    }
+
     /**
      * @param array<string, mixed>|null $variables
      * @return array<string, mixed>
      */
     private function graphqlPost(string $query, ?string $bearerToken = null, ?array $variables = null): array
+    {
+        return $this->gatewayPost($this->graphqlUrl(), $query, $bearerToken, $variables);
+    }
+
+    /**
+     * @param array<string, mixed>|null $variables
+     * @return array<string, mixed>
+     */
+    private function gatewayPost(string $url, string $query, ?string $bearerToken = null, ?array $variables = null): array
     {
         $body    = (string) json_encode(['query' => $query, 'variables' => $variables], JSON_THROW_ON_ERROR);
         $headers = "Content-Type: application/json\r\nAccept: application/json\r\n";
@@ -219,10 +285,10 @@ final class AuthTest extends TestCase
             ],
         ]);
 
-        $raw = @file_get_contents($this->graphqlUrl(), false, $ctx);
+        $raw = @file_get_contents($url, false, $ctx);
 
         if ($raw === false) {
-            $this->markTestSkipped('GraphQL endpoint unreachable: ' . $this->graphqlUrl());
+            $this->markTestSkipped('GraphQL endpoint unreachable: ' . $url);
         }
 
         return (array) json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
@@ -294,14 +360,16 @@ final class AuthTest extends TestCase
         $this->skipIfEndpointUnreachable();
 
         $result = $this->graphqlPost(
-            'mutation Login($u:String!,$p:String!) { login(usernameOrEmail:$u, password:$p) }',
+            'mutation Login($u:String!,$p:String!) { login(usernameOrEmail:$u, password:$p) { accessToken refreshToken tokenType expiresIn } }',
             null,
             ['u' => 'seeduser', 'p' => 'password']
         );
 
         $this->assertNoGraphqlErrors($result);
-        $token = $result['data']['login'] ?? '';
-        self::assertNotEmpty($token, 'login mutation must return a non-empty JWT');
+        $login = $result['data']['login'] ?? [];
+        $token = $login['accessToken'] ?? '';
+        self::assertNotEmpty($token, 'login mutation must return a non-empty JWT access token');
+        self::assertNotEmpty($login['refreshToken'] ?? '', 'login mutation must return a refresh token');
 
         // Token must be a 3-part JWT
         self::assertSame(3, substr_count($token, '.') + 1, 'Expected dot-delimited JWT');
@@ -315,9 +383,9 @@ final class AuthTest extends TestCase
         $this->skipIfEndpointUnreachable();
 
         $loginResult = $this->graphqlPost(
-            'mutation { login(usernameOrEmail: "seeduser", password: "password") }'
+            'mutation { login(usernameOrEmail: "seeduser", password: "password") { accessToken } }'
         );
-        $token = $loginResult['data']['login'] ?? '';
+        $token = $loginResult['data']['login']['accessToken'] ?? '';
 
         if (empty($token)) {
             $this->markTestSkipped('Could not obtain token — is the seed applied?');
@@ -350,5 +418,101 @@ final class AuthTest extends TestCase
             'Expected GraphQL error array when no auth token is provided'
         );
         self::assertNull($result['data']['me'] ?? null, 'me field must be null without auth');
+    }
+
+    /**
+     * Outbound 5: /v1/profile route should map to persisted me query and return auth error without token.
+     */
+    public function testResourceProfileRouteWithoutTokenReturnsAuthError(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $result = $this->gatewayPost($this->resourceUrl('profile'), '{}');
+
+        self::assertNotEmpty($result['errors'] ?? [], 'Expected errors for /v1/profile request without auth token.');
+        self::assertSame(
+            'Missing or invalid Authorization header.',
+            $result['errors'][0]['message'] ?? '',
+            'Resource gateway should return auth error message when token is missing.'
+        );
+    }
+
+    /**
+     * Outbound 6: /v1/profile route should map to me query and return authenticated user with valid token.
+     */
+    public function testResourceProfileRouteWithTokenReturnsMeData(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $loginResult = $this->graphqlPost(
+            'mutation { login(usernameOrEmail: "seeduser", password: "password") { accessToken } }'
+        );
+        $token = $loginResult['data']['login']['accessToken'] ?? '';
+
+        if (empty($token)) {
+            $this->markTestSkipped('Could not obtain token for /v1/profile test. Ensure seed is applied.');
+        }
+
+        $result = $this->gatewayPost($this->resourceUrl('profile'), '{}', $token);
+
+        $this->assertNoGraphqlErrors($result);
+        $me = $result['data']['me'] ?? null;
+        self::assertIsArray($me, 'Expected me object from /v1/profile resource route.');
+        self::assertSame('seeduser', $me['username'] ?? '', 'Resource gateway should resolve authenticated username.');
+        self::assertNotEmpty($me['id'] ?? null, 'Resource gateway should return authenticated id.');
+    }
+
+    /**
+     * Outbound 7: refreshToken mutation should rotate token pair.
+     */
+    public function testGraphQLRefreshTokenMutation(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $loginResult = $this->graphqlPost(
+            'mutation { login(usernameOrEmail: "seeduser", password: "password") { refreshToken } }'
+        );
+        $refreshToken = $loginResult['data']['login']['refreshToken'] ?? '';
+
+        if (empty($refreshToken)) {
+            $this->markTestSkipped('Could not obtain refresh token from login mutation.');
+        }
+
+        $result = $this->graphqlPost(
+            'mutation Refresh($rt:String!) { refreshToken(refreshToken:$rt) { accessToken refreshToken tokenType expiresIn } }',
+            null,
+            ['rt' => $refreshToken]
+        );
+
+        $this->assertNoGraphqlErrors($result);
+        self::assertNotEmpty($result['data']['refreshToken']['accessToken'] ?? null, 'refreshToken mutation should return accessToken.');
+        self::assertNotEmpty($result['data']['refreshToken']['refreshToken'] ?? null, 'refreshToken mutation should return rotated refreshToken.');
+    }
+
+    /**
+     * Outbound 8: /v1/auth should support explicit refreshToken mutation payload.
+     */
+    public function testResourceAuthRouteRefreshTokenMutation(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $loginResult = $this->graphqlPost(
+            'mutation { login(usernameOrEmail: "seeduser", password: "password") { refreshToken } }'
+        );
+        $refreshToken = $loginResult['data']['login']['refreshToken'] ?? '';
+
+        if (empty($refreshToken)) {
+            $this->markTestSkipped('Could not obtain refresh token for /v1/auth test.');
+        }
+
+        $result = $this->gatewayPost(
+            $this->resourceUrl('auth'),
+            'mutation RefreshViaResource($rt:String!) { refreshToken(refreshToken:$rt) { accessToken refreshToken } }',
+            null,
+            ['rt' => $refreshToken]
+        );
+
+        $this->assertNoGraphqlErrors($result);
+        self::assertNotEmpty($result['data']['refreshToken']['accessToken'] ?? null, '/v1/auth should execute refreshToken mutation against auth schema.');
     }
 }

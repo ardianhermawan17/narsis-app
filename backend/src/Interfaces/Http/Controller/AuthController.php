@@ -7,6 +7,8 @@ namespace App\Interfaces\Http\Controller;
 use App\Application\Exception\ValidationException;
 use App\Application\Command\LoginUser\LoginUserCommand;
 use App\Application\Command\LoginUser\LoginUserHandler;
+use App\Application\Command\RefreshToken\RefreshTokenCommand;
+use App\Application\Command\RefreshToken\RefreshTokenHandler;
 use App\Application\Command\RegisterUser\RegisterUserCommand;
 use App\Application\Command\RegisterUser\RegisterUserHandler;
 use App\Domain\User\User;
@@ -15,7 +17,8 @@ final class AuthController
 {
     public function __construct(
         private readonly RegisterUserHandler $registerHandler,
-        private readonly LoginUserHandler $loginHandler
+        private readonly LoginUserHandler $loginHandler,
+        private readonly RefreshTokenHandler $refreshTokenHandler
     ) {
     }
 
@@ -58,6 +61,26 @@ final class AuthController
         }
 
         $token = $this->loginHandler->handle(new LoginUserCommand($usernameOrEmail, $password));
+
+        return [
+            'status' => 200,
+            'body' => $token,
+        ];
+    }
+
+    /**
+     * @param array{refreshToken?:string} $payload
+     * @return array{status:int,body:array<string,mixed>}
+     */
+    public function refreshToken(array $payload): array
+    {
+        $refreshToken = trim((string) ($payload['refreshToken'] ?? ''));
+
+        if ($refreshToken === '') {
+            throw new ValidationException('refreshToken is required.');
+        }
+
+        $token = $this->refreshTokenHandler->handle(new RefreshTokenCommand($refreshToken));
 
         return [
             'status' => 200,
