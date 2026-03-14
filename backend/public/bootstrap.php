@@ -3,12 +3,18 @@
 declare(strict_types=1);
 
 use App\Application\Command\CreatePost\CreatePostHandler;
+use App\Application\Command\LikePost\LikePostHandler;
+use App\Application\Command\UnlikePost\UnlikePostHandler;
+use App\Application\GraphQL\Logging\GraphQlRequestLogger;
 use App\Application\Command\LoginUser\LoginUserHandler;
 use App\Application\Command\RefreshToken\RefreshTokenHandler;
 use App\Application\Command\RegisterUser\RegisterUserHandler;
 use App\Application\GraphQL\Resource\TopLevelResourceExtractor;
 use App\Application\GraphQL\Validation\GraphQlDocumentLimiter;
 use App\Application\Query\ListPosts\ListPostsQueryHandler;
+use App\Application\Query\ListUserFeed\ListUserFeedQueryHandler;
+use App\Application\Query\ListUserLikes\ListUserLikesQueryHandler;
+use App\Application\Query\ListUserPosts\ListUserPostsQueryHandler;
 use App\Infrastructure\Auth\JwtProvider;
 use App\Infrastructure\GraphQL\Cache\LruAstCache;
 use App\Infrastructure\GraphQL\Resource\CanonicalResourceQueryFactory;
@@ -17,10 +23,15 @@ use App\Infrastructure\ID\SnowflakeGenerator;
 use App\Infrastructure\Image\Copyright\ImageProcessingWorker;
 use App\Infrastructure\Image\Storage\LocalImageStorage;
 use App\Infrastructure\Persistence\PgImageRepository;
+use App\Infrastructure\Persistence\PgLikeRepository;
 use App\Infrastructure\Persistence\PgPostRepository;
+use App\Infrastructure\Persistence\PgGraphQlRequestLogRepository;
 use App\Infrastructure\Persistence\PgSessionRepository;
+use App\Infrastructure\Persistence\PgUserFeedRepository;
 use App\Infrastructure\Persistence\PgUserRepository;
 use App\Interfaces\GraphQL\Schema\AuthSchemaFactory;
+use App\Interfaces\GraphQL\Schema\FeedSchemaFactory;
+use App\Interfaces\GraphQL\Schema\LikeSchemaFactory;
 use App\Interfaces\GraphQL\Schema\PostSchemaFactory;
 use App\Interfaces\GraphQL\Schema\SchemaRegistry;
 use App\Interfaces\GraphQL\Error\GraphQlTransportErrorHandler;
@@ -58,6 +69,9 @@ $jwtRefreshTtl = (int) ($_ENV['JWT_REFRESH_TTL'] ?? '1209600');
 $userRepository = new PgUserRepository($pdo);
 $postRepository = new PgPostRepository($pdo);
 $imageRepository = new PgImageRepository($pdo);
+$likeRepository = new PgLikeRepository($pdo);
+$userFeedRepository = new PgUserFeedRepository($pdo);
+$graphQlRequestLogRepository = new PgGraphQlRequestLogRepository($pdo);
 $sessionRepository = new PgSessionRepository($pdo);
 $idGenerator = new SnowflakeGenerator($serverId);
 $jwtProvider = new JwtProvider($jwtSecret, $jwtTtl, $jwtRefreshTtl);
@@ -69,33 +83,60 @@ $imageProcessingWorker = new ImageProcessingWorker();
 $createPostHandler = new CreatePostHandler(
     $postRepository,
     $imageRepository,
+    $userFeedRepository,
     $idGenerator,
     $localImageStorage,
     $imageProcessingWorker,
     $pdo
 );
+$likePostHandler = new LikePostHandler($likeRepository, $postRepository, $userFeedRepository, $idGenerator, $pdo);
+$unlikePostHandler = new UnlikePostHandler($likeRepository, $postRepository, $pdo);
 $listPostsQueryHandler = new ListPostsQueryHandler($postRepository);
+$listUserPostsQueryHandler = new ListUserPostsQueryHandler($postRepository);
+$listUserLikesQueryHandler = new ListUserLikesQueryHandler($postRepository);
+$listUserFeedQueryHandler = new ListUserFeedQueryHandler($userFeedRepository);
 
 $registerHandler = new RegisterUserHandler($userRepository, $idGenerator);
 $loginHandler = new LoginUserHandler($userRepository, $jwtProvider, $sessionRepository, $idGenerator);
 $refreshTokenHandler = new RefreshTokenHandler($sessionRepository, $userRepository, $jwtProvider);
 
 $authController = new AuthController($registerHandler, $loginHandler, $refreshTokenHandler);
-$postController = new PostController($createPostHandler, $listPostsQueryHandler);
+$postController = new PostController(
+    $createPostHandler,
+    $listPostsQueryHandler,
+    $listUserPostsQueryHandler,
+    $listUserLikesQueryHandler,
+    $likePostHandler,
+    $unlikePostHandler,
+    $listUserFeedQueryHandler
+);
 $authMiddleware = new JwtAuthMiddleware($jwtProvider, $userRepository);
 $httpErrorHandler = new HttpErrorHandler();
 $graphQlTransportErrorHandler = new GraphQlTransportErrorHandler();
 
 $schemaRegistry = new SchemaRegistry([
     'auth' => static fn () => AuthSchemaFactory::create($authController, $authMiddleware),
-    'posts' => static fn () => PostSchemaFactory::create($postController, $authMiddleware),
+    'post' => static fn () => PostSchemaFactory::create($postController, $authMiddleware),
+    'like' => static fn () => LikeSchemaFactory::create($postController, $authMiddleware),
+    'feed' => static fn () => FeedSchemaFactory::create($postController, $authMiddleware),
 ], 'auth', [
+    'user' => 'auth',
     'me' => 'auth',
     'register' => 'auth',
     'login' => 'auth',
     'refreshtoken' => 'auth',
-    'posts' => 'posts',
-    'createpost' => 'posts',
+    'post' => 'post',
+    'allpost' => 'post',
+    'createpost' => 'post',
+    'userpost' => 'post',
+    'user-post' => 'post',
+    'likepost' => 'like',
+    'unlikepost' => 'like',
+    'userlike' => 'like',
+    'user-like' => 'like',
+    'myfeed' => 'feed',
+    'like' => 'like',
+    'feed' => 'feed',
 ]);
 
 $resourceMapper = new PersistedQueryResourceMapper(new CanonicalResourceQueryFactory());
@@ -105,6 +146,7 @@ $graphQlGatewayAdapter = new GraphQlResourceGatewayAdapter(
     new GraphQlDocumentLimiter(maxDepth: 8, maxCost: 300),
     new LruAstCache(capacity: 128)
 );
+$graphQlRequestLogger = new GraphQlRequestLogger($graphQlRequestLogRepository, $idGenerator, $jwtProvider);
 
 return [
     'authController' => $authController,
@@ -114,4 +156,5 @@ return [
     'graphQlTransportErrorHandler' => $graphQlTransportErrorHandler,
     'graphQlGatewayAdapter' => $graphQlGatewayAdapter,
     'graphQlSchemaRegistry' => $schemaRegistry,
+    'graphQlRequestLogger' => $graphQlRequestLogger,
 ];

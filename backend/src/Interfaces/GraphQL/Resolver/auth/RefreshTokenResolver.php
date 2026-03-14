@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Interfaces\GraphQL\Resolver;
+namespace App\Interfaces\GraphQL\Resolver\auth;
 
 use App\Interfaces\GraphQL\Error\GraphQlErrorHandler;
 use App\Interfaces\Http\Controller\AuthController;
 
-final class RegisterResolver
+final class RefreshTokenResolver
 {
     public function __construct(
         private readonly AuthController $authController,
@@ -22,8 +22,8 @@ final class RegisterResolver
     public function __invoke($rootValue, array $args): array
     {
         return $this->errorHandler->handle(function () use ($args): array {
-            $response = $this->authController->register($args);
-            return (array) $response['body']['user'];
+            $response = $this->authController->refreshToken($args);
+            return (array) $response['body'];
         });
     }
 }

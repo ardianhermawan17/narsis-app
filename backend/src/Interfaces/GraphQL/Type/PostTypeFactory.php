@@ -18,6 +18,7 @@ final class PostTypeFactory
                 'userId' => Type::nonNull(Type::string()),
                 'caption' => Type::string(),
                 'visibility' => Type::nonNull(Type::string()),
+                'likesCount' => Type::nonNull(Type::int()),
                 'createdAt' => Type::nonNull(Type::string()),
                 'updatedAt' => Type::nonNull(Type::string()),
                 'images' => Type::nonNull(Type::listOf(Type::nonNull($imageType))),

@@ -525,4 +525,45 @@ final class AuthTest extends TestCase
         $this->assertNoGraphqlErrors($result);
         self::assertNotEmpty($result['data']['refreshToken']['accessToken'] ?? null, '/v1/auth should execute refreshToken mutation against auth schema.');
     }
+
+    /**
+     * Outbound 9: /v1/user should map to auth schema me query and require auth.
+     */
+    public function testResourceUserRouteWithoutTokenReturnsAuthError(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $result = $this->gatewayPost($this->resourceUrl('user'), '{}');
+
+        self::assertNotEmpty($result['errors'] ?? [], 'Expected errors for /v1/user request without auth token.');
+        self::assertSame(
+            'Missing or invalid Authorization header.',
+            $result['errors'][0]['message'] ?? '',
+            '/v1/user should return auth error when token is missing.'
+        );
+    }
+
+    /**
+     * Outbound 10: /v1/user with token should return me payload.
+     */
+    public function testResourceUserRouteWithTokenReturnsMeData(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $loginResult = $this->graphqlPost(
+            'mutation { login(usernameOrEmail: "seeduser", password: "password") { accessToken } }'
+        );
+        $token = $loginResult['data']['login']['accessToken'] ?? '';
+
+        if (empty($token)) {
+            $this->markTestSkipped('Could not obtain token for /v1/user test. Ensure seed is applied.');
+        }
+
+        $result = $this->gatewayPost($this->resourceUrl('user'), '{}', $token);
+
+        $this->assertNoGraphqlErrors($result);
+        $me = $result['data']['me'] ?? null;
+        self::assertIsArray($me, 'Expected me object from /v1/user resource route.');
+        self::assertSame('seeduser', $me['username'] ?? '', '/v1/user should resolve authenticated username.');
+    }
 }

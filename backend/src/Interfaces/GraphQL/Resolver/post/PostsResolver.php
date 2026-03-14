@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Interfaces\GraphQL\Resolver;
+namespace App\Interfaces\GraphQL\Resolver\post;
 
 use App\Interfaces\GraphQL\Error\GraphQlErrorHandler;
 use App\Interfaces\Http\Controller\PostController;

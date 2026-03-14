@@ -37,6 +37,7 @@ type Post {
   userId: String!
   caption: String
   visibility: String!
+  likesCount: Int!
   createdAt: String!
   updatedAt: String!
   images: [Image!]!
@@ -51,7 +52,11 @@ input PostImageInput {
 
 type Query {
   me: User
-  posts(limit: Int): [Post!]!
+  allPost(limit: Int): [Post!]!
+  userPost(limit: Int): [Post!]!
+  allLike(limit: Int): [Post!]!
+  userLike(limit: Int): [Post!]!
+  myFeed(limit: Int): [Post!]!
 }
 
 type Mutation {
@@ -59,4 +64,6 @@ type Mutation {
   login(usernameOrEmail: String!, password: String!): AuthTokenPair!
   refreshToken(refreshToken: String!): AuthTokenPair!
   createPost(caption: String, visibility: String, images: [PostImageInput!]!): Post!
+  likePost(postId: String!): Post!
+  unlikePost(postId: String!): Post!
 }

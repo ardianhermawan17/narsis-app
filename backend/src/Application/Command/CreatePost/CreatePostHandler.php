@@ -14,12 +14,14 @@ use App\Domain\Post\Repository\PostRepositoryInterface;
 use App\Infrastructure\ID\SnowflakeGenerator;
 use App\Infrastructure\Image\Copyright\ImageProcessingWorker;
 use App\Infrastructure\Image\Storage\LocalImageStorage;
+use App\ReadModel\Repository\UserFeedRepositoryInterface;
 
 final class CreatePostHandler
 {
     public function __construct(
         private readonly PostRepositoryInterface $posts,
         private readonly ImageRepositoryInterface $images,
+        private readonly UserFeedRepositoryInterface $feed,
         private readonly SnowflakeGenerator $idGenerator,
         private readonly LocalImageStorage $imageStorage,
         private readonly ImageProcessingWorker $processingWorker,
@@ -117,6 +119,13 @@ final class CreatePostHandler
                 $persistedImages[] = $image->toArray();
             }
 
+            $this->feed->addPostForAuthorAndFollowers(
+                $post->userId(),
+                $post->id(),
+                (string) $now->format('U.u'),
+                $now
+            );
+
             $this->pdo->commit();
 
             return [
@@ -124,6 +133,7 @@ final class CreatePostHandler
                 'userId' => $post->userId(),
                 'caption' => $post->caption(),
                 'visibility' => $post->visibility(),
+                'likesCount' => 0,
                 'createdAt' => $post->createdAt()->format(DATE_ATOM),
                 'updatedAt' => $post->updatedAt()->format(DATE_ATOM),
                 'images' => $persistedImages,

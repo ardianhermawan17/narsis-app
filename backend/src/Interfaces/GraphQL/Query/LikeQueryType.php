@@ -4,35 +4,35 @@ declare(strict_types=1);
 
 namespace App\Interfaces\GraphQL\Query;
 
+use App\Interfaces\GraphQL\Resolver\like\UserLikeResolver;
 use App\Interfaces\GraphQL\Resolver\post\PostsResolver;
-use App\Interfaces\GraphQL\Resolver\post\UserPostResolver;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
 
-final class PostQueryType
+final class LikeQueryType
 {
     public static function create(
         ObjectType $postType,
         PostsResolver $postsResolver,
-        UserPostResolver $userPostResolver
+        UserLikeResolver $userLikeResolver
     ): ObjectType
     {
         return new ObjectType([
-            'name' => 'PostQuery',
+            'name' => 'LikeQuery',
             'fields' => [
-                'allPost' => [
+                'allLike' => [
                     'type' => Type::nonNull(Type::listOf(Type::nonNull($postType))),
                     'args' => [
                         'limit' => Type::int(),
                     ],
                     'resolve' => $postsResolver,
                 ],
-                'userPost' => [
+                'userLike' => [
                     'type' => Type::nonNull(Type::listOf(Type::nonNull($postType))),
                     'args' => [
                         'limit' => Type::int(),
                     ],
-                    'resolve' => $userPostResolver,
+                    'resolve' => $userLikeResolver,
                 ],
             ],
         ]);

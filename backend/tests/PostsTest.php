@@ -129,9 +129,46 @@ final class PostsTest extends TestCase
         self::assertNotEmpty($create['data']['createPost']['images'][0]['id'] ?? null);
         self::assertNotEmpty($create['data']['createPost']['images'][0]['storageKey'] ?? null);
 
-        $posts = $this->postJson($this->resourceUrl('posts'), '{}');
+        $posts = $this->postJson($this->resourceUrl('post'), '{}');
         $this->assertNoGraphqlErrors($posts);
-        self::assertIsArray($posts['data']['posts'] ?? null);
-        self::assertNotEmpty($posts['data']['posts']);
+        self::assertIsArray($posts['data']['allPost'] ?? null);
+        self::assertNotEmpty($posts['data']['allPost']);
+    }
+
+    public function testGraphQLUserPostWithoutAuthReturnsError(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $result = $this->postJson(
+            $this->graphqlUrl(),
+            'query { userPost { id } }'
+        );
+
+        self::assertNotEmpty($result['errors'] ?? [], 'userPost without auth must return GraphQL errors.');
+        self::assertStringContainsString(
+            'Missing or invalid Authorization header',
+            $result['errors'][0]['message'] ?? '',
+            'userPost must require auth token.'
+        );
+    }
+
+    public function testV1UserPostRouteWithAuthReturnsUserScopedPostList(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $login = $this->postJson(
+            $this->graphqlUrl(),
+            'mutation { login(usernameOrEmail: "seeduser", password: "password") { accessToken } }'
+        );
+
+        $this->assertNoGraphqlErrors($login);
+        $accessToken = $login['data']['login']['accessToken'] ?? '';
+        if ($accessToken === '') {
+            $this->markTestSkipped('Could not obtain access token for user post route test.');
+        }
+
+        $result = $this->postJson($this->resourceUrl('user-post'), '{}', null, $accessToken);
+        $this->assertNoGraphqlErrors($result);
+        self::assertIsArray($result['data']['userPost'] ?? null, '/v1/user-post must return userPost array.');
     }
 }

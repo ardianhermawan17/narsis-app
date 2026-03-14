@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Interfaces\GraphQL\Query;
 
-use App\Interfaces\GraphQL\Resolver\MeResolver;
+use App\Interfaces\GraphQL\Resolver\auth\MeResolver;
 use GraphQL\Type\Definition\ObjectType;
 
 final class AuthQueryType

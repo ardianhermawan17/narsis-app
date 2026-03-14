@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Interfaces\GraphQL\Resolver;
+namespace App\Interfaces\GraphQL\Resolver\feed;
 
 use App\Interfaces\GraphQL\Error\GraphQlErrorHandler;
 use App\Interfaces\Http\Controller\PostController;
 use App\Interfaces\Http\Middleware\JwtAuthMiddleware;
 
-final class CreatePostResolver
+final class MyFeedResolver
 {
     public function __construct(
         private readonly PostController $postController,
@@ -20,21 +20,18 @@ final class CreatePostResolver
     /**
      * @param array<string, mixed> $args
      * @param array<string, mixed> $context
-     * @return array<string, mixed>
+     * @return array<int, array<string, mixed>>
      */
     public function __invoke($rootValue, array $args, array $context): array
     {
         return $this->errorHandler->handle(function () use ($args, $context): array {
             $authorizationHeader = $context['authorizationHeader'] ?? null;
             $user = $this->authMiddleware->authenticate(is_string($authorizationHeader) ? $authorizationHeader : null);
+            $limit = isset($args['limit']) ? (int) $args['limit'] : 20;
 
-            $response = $this->postController->create($user, [
-                'caption' => $args['caption'] ?? null,
-                'visibility' => $args['visibility'] ?? 'public',
-                'images' => $args['images'] ?? [],
-            ]);
+            $response = $this->postController->feed($user, $limit);
 
-            return (array) $response['body']['post'];
+            return (array) $response['body']['posts'];
         });
     }
 }

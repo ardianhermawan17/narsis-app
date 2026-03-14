@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Interfaces\GraphQL\Schema;
 
+use App\Interfaces\GraphQL\Error\GraphQlErrorHandler;
 use App\Interfaces\GraphQL\Mutation\AuthMutationType;
 use App\Interfaces\GraphQL\Query\AuthQueryType;
-use App\Interfaces\GraphQL\Error\GraphQlErrorHandler;
-use App\Interfaces\GraphQL\Resolver\LoginResolver;
-use App\Interfaces\GraphQL\Resolver\MeResolver;
-use App\Interfaces\GraphQL\Resolver\RefreshTokenResolver;
-use App\Interfaces\GraphQL\Resolver\RegisterResolver;
+use App\Interfaces\GraphQL\Resolver\auth\LoginResolver;
+use App\Interfaces\GraphQL\Resolver\auth\MeResolver;
+use App\Interfaces\GraphQL\Resolver\auth\RefreshTokenResolver;
+use App\Interfaces\GraphQL\Resolver\auth\RegisterResolver;
 use App\Interfaces\GraphQL\Type\AuthTokenTypeFactory;
 use App\Interfaces\GraphQL\Type\UserTypeFactory;
 use App\Interfaces\Http\Controller\AuthController;

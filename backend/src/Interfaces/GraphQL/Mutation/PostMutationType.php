@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Interfaces\GraphQL\Mutation;
 
-use App\Interfaces\GraphQL\Resolver\CreatePostResolver;
+use App\Interfaces\GraphQL\Resolver\post\CreatePostResolver;
 use GraphQL\Type\Definition\InputObjectType;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;

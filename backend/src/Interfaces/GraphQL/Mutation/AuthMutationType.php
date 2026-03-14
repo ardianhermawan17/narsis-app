@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Interfaces\GraphQL\Mutation;
 
-use App\Interfaces\GraphQL\Resolver\LoginResolver;
-use App\Interfaces\GraphQL\Resolver\RefreshTokenResolver;
-use App\Interfaces\GraphQL\Resolver\RegisterResolver;
+use App\Interfaces\GraphQL\Resolver\auth\LoginResolver;
+use App\Interfaces\GraphQL\Resolver\auth\RefreshTokenResolver;
+use App\Interfaces\GraphQL\Resolver\auth\RegisterResolver;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
 
