@@ -8,6 +8,7 @@ use App\Interfaces\GraphQL\Error\GraphQlErrorHandler;
 use App\Interfaces\GraphQL\Mutation\AuthMutationType;
 use App\Interfaces\GraphQL\Query\AuthQueryType;
 use App\Interfaces\GraphQL\Resolver\auth\LoginResolver;
+use App\Interfaces\GraphQL\Resolver\auth\LogoutResolver;
 use App\Interfaces\GraphQL\Resolver\auth\MeResolver;
 use App\Interfaces\GraphQL\Resolver\auth\RefreshTokenResolver;
 use App\Interfaces\GraphQL\Resolver\auth\RegisterResolver;
@@ -26,6 +27,7 @@ final class AuthSchemaFactory
         $registerResolver = new RegisterResolver($authController, $errorHandler);
         $loginResolver = new LoginResolver($authController, $errorHandler);
         $refreshTokenResolver = new RefreshTokenResolver($authController, $errorHandler);
+        $logoutResolver = new LogoutResolver($authController, $errorHandler);
 
         $userType = UserTypeFactory::create();
         $authTokenType = AuthTokenTypeFactory::create();
@@ -35,7 +37,8 @@ final class AuthSchemaFactory
             $authTokenType,
             $registerResolver,
             $loginResolver,
-            $refreshTokenResolver
+            $refreshTokenResolver,
+            $logoutResolver
         );
 
         return new Schema([

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Application\Command\Logout\LogoutCommand;
+use App\Application\Command\Logout\LogoutHandler;
 use App\Application\Command\RefreshToken\RefreshTokenCommand;
 use App\Application\Command\RefreshToken\RefreshTokenHandler;
 use App\Domain\Session\Repository\SessionRepositoryInterface;
@@ -236,6 +238,46 @@ final class AuthTest extends TestCase
         self::assertNotEmpty($result['accessToken'], 'Refresh flow should return a new access token.');
         self::assertNotEmpty($result['refreshToken'], 'Refresh flow should return a rotated refresh token.');
         self::assertSame('Bearer', $result['tokenType'], 'Refresh flow should return Bearer token type.');
+    }
+
+    public function testLogoutHandlerRevokesSessionByRefreshToken(): void
+    {
+        $jwt = $this->makeJwtProvider();
+        $user = $this->makeTestUser();
+        $sessionId = 'session-logout-001';
+        $refreshToken = $jwt->createRefreshToken($user->id(), $sessionId);
+
+        $sessions = $this->createMock(SessionRepositoryInterface::class);
+        $sessions->expects(self::once())
+            ->method('revokeSession')
+            ->with(
+                $sessionId,
+                hash('sha256', $refreshToken)
+            )
+            ->willReturn(true);
+
+        $handler = new LogoutHandler($sessions, $jwt);
+        $success = $handler->handle(new LogoutCommand($refreshToken));
+
+        self::assertTrue($success, 'Logout should return true after revoking a valid session.');
+    }
+
+    public function testLogoutHandlerRejectsAlreadyRevokedSession(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/invalid or expired/i');
+
+        $jwt = $this->makeJwtProvider();
+        $user = $this->makeTestUser();
+        $refreshToken = $jwt->createRefreshToken($user->id(), 'session-logout-002');
+
+        $sessions = $this->createMock(SessionRepositoryInterface::class);
+        $sessions->expects(self::once())
+            ->method('revokeSession')
+            ->willReturn(false);
+
+        $handler = new LogoutHandler($sessions, $jwt);
+        $handler->handle(new LogoutCommand($refreshToken));
     }
 
     // =========================================================================
@@ -565,5 +607,71 @@ final class AuthTest extends TestCase
         $me = $result['data']['me'] ?? null;
         self::assertIsArray($me, 'Expected me object from /v1/user resource route.');
         self::assertSame('seeduser', $me['username'] ?? '', '/v1/user should resolve authenticated username.');
+    }
+
+    /**
+     * Outbound 11: logout mutation should revoke refresh token session so subsequent refresh fails.
+     */
+    public function testGraphQLLogoutRevokesRefreshSession(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $loginResult = $this->graphqlPost(
+            'mutation { login(usernameOrEmail: "seeduser", password: "password") { refreshToken } }'
+        );
+        $refreshToken = $loginResult['data']['login']['refreshToken'] ?? '';
+
+        if ($refreshToken === '') {
+            $this->markTestSkipped('Could not obtain refresh token for logout test.');
+        }
+
+        $logoutResult = $this->graphqlPost(
+            'mutation Logout($rt:String!) { logout(refreshToken:$rt) }',
+            null,
+            ['rt' => $refreshToken]
+        );
+
+        $this->assertNoGraphqlErrors($logoutResult);
+        self::assertTrue((bool) ($logoutResult['data']['logout'] ?? false), 'logout should return true for valid refresh token.');
+
+        $refreshAfterLogout = $this->graphqlPost(
+            'mutation Refresh($rt:String!) { refreshToken(refreshToken:$rt) { accessToken } }',
+            null,
+            ['rt' => $refreshToken]
+        );
+
+        self::assertNotEmpty($refreshAfterLogout['errors'] ?? [], 'Refresh after logout must fail.');
+        self::assertStringContainsString(
+            'invalid or expired',
+            strtolower($refreshAfterLogout['errors'][0]['message'] ?? ''),
+            'Refresh after logout should indicate revoked/expired token.'
+        );
+    }
+
+    /**
+     * Outbound 12: /v1/auth should support explicit logout mutation payload.
+     */
+    public function testResourceAuthRouteLogoutMutation(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $loginResult = $this->graphqlPost(
+            'mutation { login(usernameOrEmail: "seeduser", password: "password") { refreshToken } }'
+        );
+        $refreshToken = $loginResult['data']['login']['refreshToken'] ?? '';
+
+        if ($refreshToken === '') {
+            $this->markTestSkipped('Could not obtain refresh token for /v1/auth logout test.');
+        }
+
+        $result = $this->gatewayPost(
+            $this->resourceUrl('auth'),
+            'mutation LogoutViaResource($rt:String!) { logout(refreshToken:$rt) }',
+            null,
+            ['rt' => $refreshToken]
+        );
+
+        $this->assertNoGraphqlErrors($result);
+        self::assertTrue((bool) ($result['data']['logout'] ?? false), '/v1/auth should execute logout mutation against auth schema.');
     }
 }
