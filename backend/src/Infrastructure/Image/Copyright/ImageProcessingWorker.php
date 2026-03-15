@@ -36,6 +36,11 @@ final class ImageProcessingWorker
 
     private function distance(string $hashA, string $hashB): int
     {
+        if (strlen($hashA) !== strlen($hashB)) {
+            throw new \InvalidArgumentException(
+                sprintf('Hash length mismatch: %d vs %d bytes', strlen($hashA), strlen($hashB))
+            );
+        }
         $length = min(strlen($hashA), strlen($hashB));
         $distance = 0;
 
