@@ -19,9 +19,10 @@ final class PersistedQueryResourceMapper implements ResourceQueryMapperInterface
             'user' => 'query UserGateway { me { id username email displayName bio createdAt updatedAt } }',
             'post' => 'query PostGateway { allPost { id userId caption visibility likesCount createdAt updatedAt images { id storageKey mimeType width height sizeBytes altText isPrimary createdAt } } }',
             'user-post' => 'query UserPostGateway { userPost { id userId caption visibility likesCount createdAt updatedAt images { id storageKey mimeType width height sizeBytes altText isPrimary createdAt } } }',
-            'comment' => 'query CommentGateway($postId:String!,$limit:Int){ comment(postId:$postId, limit:$limit) { id postId userId parentCommentId content createdAt updatedAt } }',
-            'like' => 'query LikeGateway { allLike { id userId caption visibility likesCount createdAt updatedAt } }',
-            'user-like' => 'query UserLikeGateway { userLike { id userId caption visibility likesCount createdAt updatedAt } }',
+            'user-comment' => 'query UserCommentGateway($limit:Int){ userComment(limit:$limit) { id postId userId parentCommentId content createdAt updatedAt } }',
+            'like' => 'query UserLikeGateway($limit:Int){ userLike(limit:$limit) { id userId caption visibility likesCount createdAt updatedAt } }',
+            'user-like' => 'query UserLikeGateway($limit:Int){ userLike(limit:$limit) { id userId caption visibility likesCount createdAt updatedAt } }',
+            'post-counters' => 'query PostCountersGateway($limit:Int){ postCounters(limit:$limit) { postId likesCount commentsCount sharesCount } }',
             'feed' => 'query FeedGateway { myFeed { id userId caption visibility likesCount createdAt updatedAt images { id storageKey mimeType width height sizeBytes altText isPrimary createdAt } } }',
             'profile' => 'query ProfileGateway { me { id username email displayName bio createdAt updatedAt } }',
         ];

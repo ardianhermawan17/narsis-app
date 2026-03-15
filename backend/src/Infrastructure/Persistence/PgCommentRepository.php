@@ -39,12 +39,12 @@ final class PgCommentRepository implements CommentRepositoryInterface
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function findByPostId(string $postId, int $limit = 20): array
+    public function findByUserId(string $userId, int $limit = 20): array
     {
         $stmt = $this->pdo->prepare(
             'SELECT id, post_id, user_id, parent_comment_id, content, created_at, updated_at '
             . 'FROM comments '
-            . 'WHERE post_id = :post_id AND is_deleted = FALSE '
+            . 'WHERE user_id = :user_id AND is_deleted = FALSE '
             . 'ORDER BY created_at DESC '
             . 'LIMIT :limit'
         );
@@ -53,7 +53,7 @@ final class PgCommentRepository implements CommentRepositoryInterface
             throw new \RuntimeException('Failed to prepare comment list query.');
         }
 
-        $stmt->bindValue(':post_id', $postId, \PDO::PARAM_STR);
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
         $stmt->execute();
 

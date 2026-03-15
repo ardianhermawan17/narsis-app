@@ -106,11 +106,11 @@ final class PgPostRepository implements PostRepositoryInterface
     {
         $stmt = $this->pdo->prepare(
             'SELECT p.id, p.user_id, p.caption, p.visibility, p.created_at, p.updated_at, COALESCE(pc.likes_count, 0) AS likes_count, '
-            . 'i.id AS image_id, i.storage_key, i.mime_type, i.width, i.height, i.size_bytes, i.alt_text, i.is_primary '
+            . 'i.id AS image_id, i.storage_key, i.mime_type, i.width, i.height, i.size_bytes, i.alt_text, i.is_primary, i.created_at AS image_created_at '
             . 'FROM posts p '
             . 'LEFT JOIN post_counters pc ON pc.post_id = p.id '
             . 'LEFT JOIN images i ON i.imageable_type = :imageable_type AND i.imageable_id = p.id '
-            . 'WHERE p.is_deleted = FALSE '
+            . 'WHERE p.is_deleted = FALSE AND p.visibility = :visibility '
             . 'ORDER BY p.created_at DESC '
             . 'LIMIT :limit'
         );
@@ -120,6 +120,7 @@ final class PgPostRepository implements PostRepositoryInterface
         }
 
         $stmt->bindValue(':imageable_type', 'post', \PDO::PARAM_STR);
+        $stmt->bindValue(':visibility', 'public', \PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
         $stmt->execute();
 
@@ -154,6 +155,9 @@ final class PgPostRepository implements PostRepositoryInterface
                     'sizeBytes' => isset($row['size_bytes']) ? (int) $row['size_bytes'] : 0,
                     'altText' => isset($row['alt_text']) ? (string) $row['alt_text'] : null,
                     'isPrimary' => isset($row['is_primary']) ? (bool) $row['is_primary'] : false,
+                    'createdAt' => isset($row['image_created_at'])
+                        ? (new \DateTimeImmutable((string) $row['image_created_at']))->format(DATE_ATOM)
+                        : (new \DateTimeImmutable((string) $row['created_at']))->format(DATE_ATOM),
                 ];
             }
         }
@@ -168,7 +172,7 @@ final class PgPostRepository implements PostRepositoryInterface
     {
         $stmt = $this->pdo->prepare(
             'SELECT p.id, p.user_id, p.caption, p.visibility, p.created_at, p.updated_at, COALESCE(pc.likes_count, 0) AS likes_count, '
-            . 'i.id AS image_id, i.storage_key, i.mime_type, i.width, i.height, i.size_bytes, i.alt_text, i.is_primary '
+            . 'i.id AS image_id, i.storage_key, i.mime_type, i.width, i.height, i.size_bytes, i.alt_text, i.is_primary, i.created_at AS image_created_at '
             . 'FROM posts p '
             . 'LEFT JOIN post_counters pc ON pc.post_id = p.id '
             . 'LEFT JOIN images i ON i.imageable_type = :imageable_type AND i.imageable_id = p.id '
@@ -201,7 +205,7 @@ final class PgPostRepository implements PostRepositoryInterface
     {
         $stmt = $this->pdo->prepare(
             'SELECT p.id, p.user_id, p.caption, p.visibility, p.created_at, p.updated_at, COALESCE(pc.likes_count, 0) AS likes_count, '
-            . 'i.id AS image_id, i.storage_key, i.mime_type, i.width, i.height, i.size_bytes, i.alt_text, i.is_primary '
+            . 'i.id AS image_id, i.storage_key, i.mime_type, i.width, i.height, i.size_bytes, i.alt_text, i.is_primary, i.created_at AS image_created_at '
             . 'FROM likes l '
             . 'JOIN posts p ON p.id = l.post_id AND p.is_deleted = FALSE '
             . 'LEFT JOIN post_counters pc ON pc.post_id = p.id '
@@ -226,6 +230,40 @@ final class PgPostRepository implements PostRepositoryInterface
         }
 
         return $this->mapGroupedPostRows($rows);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function findPostCounters(int $limit = 20): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT post_id, likes_count, comments_count, shares_count '
+            . 'FROM post_counters '
+            . 'ORDER BY updated_at DESC '
+            . 'LIMIT :limit'
+        );
+
+        if ($stmt === false) {
+            throw new \RuntimeException('Failed to prepare post counters query.');
+        }
+
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        return array_map(static function (array $row): array {
+            return [
+                'postId' => (string) $row['post_id'],
+                'likesCount' => (int) ($row['likes_count'] ?? 0),
+                'commentsCount' => (int) ($row['comments_count'] ?? 0),
+                'sharesCount' => (int) ($row['shares_count'] ?? 0),
+            ];
+        }, $rows);
     }
 
     /**
@@ -260,6 +298,9 @@ final class PgPostRepository implements PostRepositoryInterface
                     'sizeBytes' => isset($row['size_bytes']) ? (int) $row['size_bytes'] : 0,
                     'altText' => isset($row['alt_text']) ? (string) $row['alt_text'] : null,
                     'isPrimary' => isset($row['is_primary']) ? (bool) $row['is_primary'] : false,
+                    'createdAt' => isset($row['image_created_at'])
+                        ? (new \DateTimeImmutable((string) $row['image_created_at']))->format(DATE_ATOM)
+                        : (new \DateTimeImmutable((string) $row['created_at']))->format(DATE_ATOM),
                 ];
             }
         }

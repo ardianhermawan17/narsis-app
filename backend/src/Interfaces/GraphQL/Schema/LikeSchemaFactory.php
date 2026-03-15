@@ -10,7 +10,6 @@ use App\Interfaces\GraphQL\Query\LikeQueryType;
 use App\Interfaces\GraphQL\Resolver\like\LikePostResolver;
 use App\Interfaces\GraphQL\Resolver\like\UnlikePostResolver;
 use App\Interfaces\GraphQL\Resolver\like\UserLikeResolver;
-use App\Interfaces\GraphQL\Resolver\post\PostsResolver;
 use App\Interfaces\GraphQL\Type\ImageTypeFactory;
 use App\Interfaces\GraphQL\Type\PostTypeFactory;
 use App\Interfaces\Http\Controller\PostController;
@@ -23,14 +22,13 @@ final class LikeSchemaFactory
     {
         $errorHandler = new GraphQlErrorHandler();
 
-        $postsResolver = new PostsResolver($postController, $errorHandler);
         $userLikeResolver = new UserLikeResolver($postController, $authMiddleware, $errorHandler);
         $likePostResolver = new LikePostResolver($postController, $authMiddleware, $errorHandler);
         $unlikePostResolver = new UnlikePostResolver($postController, $authMiddleware, $errorHandler);
 
         $imageType = ImageTypeFactory::create();
         $postType = PostTypeFactory::create($imageType);
-        $queryType = LikeQueryType::create($postType, $postsResolver, $userLikeResolver);
+        $queryType = LikeQueryType::create($postType, $userLikeResolver);
         $mutationType = LikeMutationType::create($postType, $likePostResolver, $unlikePostResolver);
 
         return new Schema([

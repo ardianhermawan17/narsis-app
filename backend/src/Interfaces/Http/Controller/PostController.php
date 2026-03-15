@@ -11,6 +11,7 @@ use App\Application\Command\LikePost\LikePostHandler;
 use App\Application\Command\UnlikePost\UnlikePostCommand;
 use App\Application\Command\UnlikePost\UnlikePostHandler;
 use App\Application\Exception\ValidationException;
+use App\Application\Query\ListPostCounters\ListPostCountersQueryHandler;
 use App\Application\Query\ListUserLikes\ListUserLikesQueryHandler;
 use App\Application\Query\ListPosts\ListPostsQueryHandler;
 use App\Application\Query\ListUserFeed\ListUserFeedQueryHandler;
@@ -22,6 +23,7 @@ final class PostController
     public function __construct(
         private readonly CreatePostHandler $createPostHandler,
         private readonly ListPostsQueryHandler $listPostsQueryHandler,
+        private readonly ListPostCountersQueryHandler $listPostCountersQueryHandler,
         private readonly ListUserPostsQueryHandler $listUserPostsQueryHandler,
         private readonly ListUserLikesQueryHandler $listUserLikesQueryHandler,
         private readonly LikePostHandler $likePostHandler,
@@ -80,6 +82,19 @@ final class PostController
             'status' => 200,
             'body' => [
                 'posts' => $this->listPostsQueryHandler->handle($limit),
+            ],
+        ];
+    }
+
+    /**
+     * @return array{status:int,body:array<string,mixed>}
+     */
+    public function listCounters(int $limit = 20): array
+    {
+        return [
+            'status' => 200,
+            'body' => [
+                'postCounters' => $this->listPostCountersQueryHandler->handle($limit),
             ],
         ];
     }

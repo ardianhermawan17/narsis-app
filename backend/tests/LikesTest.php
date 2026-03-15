@@ -11,10 +11,10 @@ use App\Application\Command\UnlikePost\UnlikePostHandler;
 use App\Application\Exception\AlreadyLikedException;
 use App\Application\Exception\NotLikedException;
 use App\Application\Exception\ValidationException;
+use App\Domain\Feed\Repository\UserFeedRepositoryInterface;
 use App\Domain\Like\Repository\LikeRepositoryInterface;
 use App\Domain\Post\Repository\PostRepositoryInterface;
 use App\Infrastructure\ID\SnowflakeGenerator;
-use App\ReadModel\Repository\UserFeedRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -618,17 +618,18 @@ final class LikesTest extends TestCase
     }
 
     /**
-     * Outbound 6: POST /v1/like resource route returns a like list that includes the likesCount field.
+     * Outbound 6: POST /v1/like resource route returns the current user's liked posts.
      * This tests the persisted-query mapping for the resource gateway.
      */
-    public function testV1LikeResourceRouteReturnsLikeListWithLikesCountField(): void
+    public function testV1LikeResourceRouteReturnsUserLikeListWithLikesCountField(): void
     {
         $this->skipIfEndpointUnreachable();
 
-        $result = $this->gatewayPost($this->resourceUrl('like'), '{}');
+        $token = $this->loginAsSeedUser();
+        $result = $this->gatewayPost($this->resourceUrl('like'), '{}', $token);
         $this->assertNoGraphqlErrors($result);
 
-        $posts = $result['data']['like'] ?? null;
+        $posts = $result['data']['userLike'] ?? null;
         self::assertIsArray($posts, 'POST /v1/like must return a like array.');
 
         if (!empty($posts)) {

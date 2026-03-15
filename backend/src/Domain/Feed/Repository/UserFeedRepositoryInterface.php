@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\ReadModel\Repository;
+namespace App\Domain\Feed\Repository;
 
-use App\ReadModel\UserFeedItem;
+use App\Domain\Feed\UserFeed;
 
 interface UserFeedRepositoryInterface
 {
@@ -13,7 +13,7 @@ interface UserFeedRepositoryInterface
     public function upsertPostForUser(string $userId, string $postId, string $score, \DateTimeImmutable $insertedAt): void;
 
     /**
-     * @return array<int, UserFeedItem>
+     * @return array<int, UserFeed>
      */
     public function findByUserId(string $userId, int $limit = 20): array;
 }

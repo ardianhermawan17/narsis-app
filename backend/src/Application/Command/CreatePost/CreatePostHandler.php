@@ -6,6 +6,7 @@ namespace App\Application\Command\CreatePost;
 
 use App\Application\Exception\DuplicateImageDetectedException;
 use App\Application\Exception\ValidationException;
+use App\Domain\Feed\Repository\UserFeedRepositoryInterface;
 use App\Domain\Image\Image;
 use App\Domain\Image\ImageFingerprint;
 use App\Domain\Image\Repository\ImageRepositoryInterface;
@@ -14,7 +15,6 @@ use App\Domain\Post\Repository\PostRepositoryInterface;
 use App\Infrastructure\ID\SnowflakeGenerator;
 use App\Infrastructure\Image\Copyright\ImageProcessingWorker;
 use App\Infrastructure\Image\Storage\LocalImageStorage;
-use App\ReadModel\Repository\UserFeedRepositoryInterface;
 
 final class CreatePostHandler
 {

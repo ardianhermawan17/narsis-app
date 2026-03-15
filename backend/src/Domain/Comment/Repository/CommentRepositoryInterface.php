@@ -13,7 +13,7 @@ interface CommentRepositoryInterface
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function findByPostId(string $postId, int $limit = 20): array;
+    public function findByUserId(string $userId, int $limit = 20): array;
 
     public function incrementPostComments(string $postId, \DateTimeImmutable $updatedAt): void;
 }

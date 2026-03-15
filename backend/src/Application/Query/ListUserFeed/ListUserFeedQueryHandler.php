@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Query\ListUserFeed;
 
-use App\ReadModel\UserFeedItem;
-use App\ReadModel\Repository\UserFeedRepositoryInterface;
+use App\Domain\Feed\Repository\UserFeedRepositoryInterface;
+use App\Domain\Feed\UserFeed;
 
 final class ListUserFeedQueryHandler
 {
@@ -23,7 +23,7 @@ final class ListUserFeedQueryHandler
         $items = $this->feed->findByUserId($userId, $limit);
 
         return array_map(
-            static fn (UserFeedItem $item): array => $item->toArray(),
+            static fn (UserFeed $item): array => $item->toArray(),
             $items
         );
     }
