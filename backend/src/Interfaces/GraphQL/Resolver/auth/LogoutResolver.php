@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Interfaces\GraphQL\Resolver\auth;
+
+use App\Interfaces\GraphQL\Error\GraphQlErrorHandler;
+use App\Interfaces\Http\Controller\AuthController;
+
+final class LogoutResolver
+{
+    public function __construct(
+        private readonly AuthController $authController,
+        private readonly GraphQlErrorHandler $errorHandler
+    ) {
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    public function __invoke($rootValue, array $args): bool
+    {
+        return $this->errorHandler->handle(function () use ($args): bool {
+            $response = $this->authController->logout($args);
+
+            return (bool) ($response['body']['success'] ?? false);
+        });
+    }
+}

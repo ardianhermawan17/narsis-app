@@ -22,4 +22,6 @@ interface SessionRepositoryInterface
         string $newRefreshTokenHash,
         \DateTimeImmutable $newExpiresAt
     ): bool;
+
+    public function revokeSession(string $sessionId, string $refreshTokenHash): bool;
 }

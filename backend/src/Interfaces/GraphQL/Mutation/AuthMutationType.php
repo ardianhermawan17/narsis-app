@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Interfaces\GraphQL\Mutation;
 
 use App\Interfaces\GraphQL\Resolver\auth\LoginResolver;
+use App\Interfaces\GraphQL\Resolver\auth\LogoutResolver;
 use App\Interfaces\GraphQL\Resolver\auth\RefreshTokenResolver;
 use App\Interfaces\GraphQL\Resolver\auth\RegisterResolver;
 use GraphQL\Type\Definition\ObjectType;
@@ -17,7 +18,8 @@ final class AuthMutationType
         ObjectType $authTokenType,
         RegisterResolver $registerResolver,
         LoginResolver $loginResolver,
-        RefreshTokenResolver $refreshTokenResolver
+        RefreshTokenResolver $refreshTokenResolver,
+        LogoutResolver $logoutResolver
     ): ObjectType {
         return new ObjectType([
             'name' => 'Mutation',
@@ -45,6 +47,13 @@ final class AuthMutationType
                         'refreshToken' => Type::nonNull(Type::string()),
                     ],
                     'resolve' => $refreshTokenResolver,
+                ],
+                'logout' => [
+                    'type' => Type::nonNull(Type::boolean()),
+                    'args' => [
+                        'refreshToken' => Type::nonNull(Type::string()),
+                    ],
+                    'resolve' => $logoutResolver,
                 ],
             ],
         ]);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Application\Command\AddComment\AddCommentHandler;
 use App\Application\Command\CreatePost\CreatePostHandler;
 use App\Application\Command\LikePost\LikePostHandler;
+use App\Application\Command\Logout\LogoutHandler;
 use App\Application\Command\UnlikePost\UnlikePostHandler;
 use App\Application\GraphQL\Logging\GraphQlRequestLogger;
 use App\Application\Command\LoginUser\LoginUserHandler;
@@ -109,8 +110,9 @@ $listUserFeedQueryHandler = new ListUserFeedQueryHandler($userFeedRepository);
 $registerHandler = new RegisterUserHandler($userRepository, $idGenerator);
 $loginHandler = new LoginUserHandler($userRepository, $jwtProvider, $sessionRepository, $idGenerator);
 $refreshTokenHandler = new RefreshTokenHandler($sessionRepository, $userRepository, $jwtProvider);
+$logoutHandler = new LogoutHandler($sessionRepository, $jwtProvider);
 
-$authController = new AuthController($registerHandler, $loginHandler, $refreshTokenHandler);
+$authController = new AuthController($registerHandler, $loginHandler, $refreshTokenHandler, $logoutHandler);
 $commentController = new CommentController($addCommentHandler, $listCommentsQueryHandler);
 $postController = new PostController(
     $createPostHandler,
@@ -138,6 +140,7 @@ $schemaRegistry = new SchemaRegistry([
     'register' => 'auth',
     'login' => 'auth',
     'refreshtoken' => 'auth',
+    'logout' => 'auth',
     'post' => 'post',
     'allpost' => 'post',
     'createpost' => 'post',

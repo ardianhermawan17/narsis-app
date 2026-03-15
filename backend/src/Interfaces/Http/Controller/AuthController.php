@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Interfaces\Http\Controller;
 
 use App\Application\Exception\ValidationException;
+use App\Application\Command\Logout\LogoutCommand;
+use App\Application\Command\Logout\LogoutHandler;
 use App\Application\Command\LoginUser\LoginUserCommand;
 use App\Application\Command\LoginUser\LoginUserHandler;
 use App\Application\Command\RefreshToken\RefreshTokenCommand;
@@ -18,7 +20,8 @@ final class AuthController
     public function __construct(
         private readonly RegisterUserHandler $registerHandler,
         private readonly LoginUserHandler $loginHandler,
-        private readonly RefreshTokenHandler $refreshTokenHandler
+        private readonly RefreshTokenHandler $refreshTokenHandler,
+        private readonly LogoutHandler $logoutHandler
     ) {
     }
 
@@ -89,6 +92,28 @@ final class AuthController
     }
 
     /**
+     * @param array{refreshToken?:string} $payload
+     * @return array{status:int,body:array<string,mixed>}
+     */
+    public function logout(array $payload): array
+    {
+        $refreshToken = trim((string) ($payload['refreshToken'] ?? ''));
+
+        if ($refreshToken === '') {
+            throw new ValidationException('refreshToken is required.');
+        }
+
+        $success = $this->logoutHandler->handle(new LogoutCommand($refreshToken));
+
+        return [
+            'status' => 200,
+            'body' => [
+                'success' => $success,
+            ],
+        ];
+    }
+
+    /**
      * @return array{status:int,body:array<string,mixed>}
      */
     public function profile(User $user): array
@@ -98,5 +123,4 @@ final class AuthController
             'body' => $user->toPublicArray(),
         ];
     }
-
 }

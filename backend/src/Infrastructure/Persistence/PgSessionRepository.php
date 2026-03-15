@@ -93,4 +93,24 @@ final class PgSessionRepository implements SessionRepositoryInterface
 
         return $stmt->rowCount() > 0;
     }
+
+    public function revokeSession(string $sessionId, string $refreshTokenHash): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'DELETE FROM sessions '
+            . 'WHERE id = :id AND refresh_token_hash = :refresh_token_hash '
+            . 'AND (expires_at IS NULL OR expires_at > NOW())'
+        );
+
+        if ($stmt === false) {
+            throw new \RuntimeException('Failed to prepare session revoke statement.');
+        }
+
+        $stmt->execute([
+            ':id' => $sessionId,
+            ':refresh_token_hash' => $refreshTokenHash,
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
 }
