@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Application\Command\AddComment\AddCommentHandler;
 use App\Application\Command\CreatePost\CreatePostHandler;
 use App\Application\Command\LikePost\LikePostHandler;
 use App\Application\Command\UnlikePost\UnlikePostHandler;
@@ -11,6 +12,7 @@ use App\Application\Command\RefreshToken\RefreshTokenHandler;
 use App\Application\Command\RegisterUser\RegisterUserHandler;
 use App\Application\GraphQL\Resource\TopLevelResourceExtractor;
 use App\Application\GraphQL\Validation\GraphQlDocumentLimiter;
+use App\Application\Query\ListComments\ListCommentsQueryHandler;
 use App\Application\Query\ListPosts\ListPostsQueryHandler;
 use App\Application\Query\ListUserFeed\ListUserFeedQueryHandler;
 use App\Application\Query\ListUserLikes\ListUserLikesQueryHandler;
@@ -22,6 +24,7 @@ use App\Infrastructure\GraphQL\Resource\PersistedQueryResourceMapper;
 use App\Infrastructure\ID\SnowflakeGenerator;
 use App\Infrastructure\Image\Copyright\ImageProcessingWorker;
 use App\Infrastructure\Image\Storage\LocalImageStorage;
+use App\Infrastructure\Persistence\PgCommentRepository;
 use App\Infrastructure\Persistence\PgImageRepository;
 use App\Infrastructure\Persistence\PgLikeRepository;
 use App\Infrastructure\Persistence\PgPostRepository;
@@ -30,6 +33,7 @@ use App\Infrastructure\Persistence\PgSessionRepository;
 use App\Infrastructure\Persistence\PgUserFeedRepository;
 use App\Infrastructure\Persistence\PgUserRepository;
 use App\Interfaces\GraphQL\Schema\AuthSchemaFactory;
+use App\Interfaces\GraphQL\Schema\CommentSchemaFactory;
 use App\Interfaces\GraphQL\Schema\FeedSchemaFactory;
 use App\Interfaces\GraphQL\Schema\LikeSchemaFactory;
 use App\Interfaces\GraphQL\Schema\PostSchemaFactory;
@@ -37,6 +41,7 @@ use App\Interfaces\GraphQL\Schema\SchemaRegistry;
 use App\Interfaces\GraphQL\Error\GraphQlTransportErrorHandler;
 use App\Interfaces\Http\Adapter\GraphQlResourceGatewayAdapter;
 use App\Interfaces\Http\Controller\AuthController;
+use App\Interfaces\Http\Controller\CommentController;
 use App\Interfaces\Http\Controller\PostController;
 use App\Interfaces\Http\Error\HttpErrorHandler;
 use App\Interfaces\Http\Middleware\JwtAuthMiddleware;
@@ -68,6 +73,7 @@ $jwtRefreshTtl = (int) ($_ENV['JWT_REFRESH_TTL'] ?? '1209600');
 
 $userRepository = new PgUserRepository($pdo);
 $postRepository = new PgPostRepository($pdo);
+$commentRepository = new PgCommentRepository($pdo);
 $imageRepository = new PgImageRepository($pdo);
 $likeRepository = new PgLikeRepository($pdo);
 $userFeedRepository = new PgUserFeedRepository($pdo);
@@ -89,8 +95,10 @@ $createPostHandler = new CreatePostHandler(
     $imageProcessingWorker,
     $pdo
 );
+$addCommentHandler = new AddCommentHandler($commentRepository, $postRepository, $idGenerator, $pdo);
 $likePostHandler = new LikePostHandler($likeRepository, $postRepository, $userFeedRepository, $idGenerator, $pdo);
 $unlikePostHandler = new UnlikePostHandler($likeRepository, $postRepository, $pdo);
+$listCommentsQueryHandler = new ListCommentsQueryHandler($commentRepository);
 $listPostsQueryHandler = new ListPostsQueryHandler($postRepository);
 $listUserPostsQueryHandler = new ListUserPostsQueryHandler($postRepository);
 $listUserLikesQueryHandler = new ListUserLikesQueryHandler($postRepository);
@@ -101,6 +109,7 @@ $loginHandler = new LoginUserHandler($userRepository, $jwtProvider, $sessionRepo
 $refreshTokenHandler = new RefreshTokenHandler($sessionRepository, $userRepository, $jwtProvider);
 
 $authController = new AuthController($registerHandler, $loginHandler, $refreshTokenHandler);
+$commentController = new CommentController($addCommentHandler, $listCommentsQueryHandler);
 $postController = new PostController(
     $createPostHandler,
     $listPostsQueryHandler,
@@ -117,6 +126,7 @@ $graphQlTransportErrorHandler = new GraphQlTransportErrorHandler();
 $schemaRegistry = new SchemaRegistry([
     'auth' => static fn () => AuthSchemaFactory::create($authController, $authMiddleware),
     'post' => static fn () => PostSchemaFactory::create($postController, $authMiddleware),
+    'comment' => static fn () => CommentSchemaFactory::create($commentController, $authMiddleware),
     'like' => static fn () => LikeSchemaFactory::create($postController, $authMiddleware),
     'feed' => static fn () => FeedSchemaFactory::create($postController, $authMiddleware),
 ], 'auth', [
@@ -130,8 +140,11 @@ $schemaRegistry = new SchemaRegistry([
     'createpost' => 'post',
     'userpost' => 'post',
     'user-post' => 'post',
+    'comment' => 'comment',
+    'addcomment' => 'comment',
     'likepost' => 'like',
     'unlikepost' => 'like',
+    'alllike' => 'like',
     'userlike' => 'like',
     'user-like' => 'like',
     'myfeed' => 'feed',
@@ -150,6 +163,7 @@ $graphQlRequestLogger = new GraphQlRequestLogger($graphQlRequestLogRepository, $
 
 return [
     'authController' => $authController,
+    'commentController' => $commentController,
     'postController' => $postController,
     'authMiddleware' => $authMiddleware,
     'httpErrorHandler' => $httpErrorHandler,
