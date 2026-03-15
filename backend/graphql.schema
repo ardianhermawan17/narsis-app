@@ -43,6 +43,16 @@ type Post {
   images: [Image!]!
 }
 
+type Comment {
+  id: String!
+  postId: String!
+  userId: String!
+  parentCommentId: String
+  content: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
 input PostImageInput {
   imageBase64: String!
   mimeType: String
@@ -54,6 +64,7 @@ type Query {
   me: User
   allPost(limit: Int): [Post!]!
   userPost(limit: Int): [Post!]!
+  comment(postId: String!, limit: Int): [Comment!]!
   allLike(limit: Int): [Post!]!
   userLike(limit: Int): [Post!]!
   myFeed(limit: Int): [Post!]!
@@ -64,6 +75,7 @@ type Mutation {
   login(usernameOrEmail: String!, password: String!): AuthTokenPair!
   refreshToken(refreshToken: String!): AuthTokenPair!
   createPost(caption: String, visibility: String, images: [PostImageInput!]!): Post!
+  addComment(postId: String!, content: String!, parentCommentId: String): Comment!
   likePost(postId: String!): Post!
   unlikePost(postId: String!): Post!
 }
