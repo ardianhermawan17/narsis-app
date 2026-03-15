@@ -16,11 +16,11 @@ final class ListCommentsQueryHandler
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function handle(string $postId, int $limit = 20): array
+    public function handle(string $userId, int $limit = 20): array
     {
-        $postId = trim($postId);
-        if ($postId === '') {
-            throw new ValidationException('postId is required.');
+        $userId = trim($userId);
+        if ($userId === '') {
+            throw new ValidationException('userId is required.');
         }
 
         if ($limit < 1) {
@@ -31,6 +31,6 @@ final class ListCommentsQueryHandler
             $limit = 100;
         }
 
-        return $this->comments->findByPostId($postId, $limit);
+        return $this->comments->findByUserId($userId, $limit);
     }
 }

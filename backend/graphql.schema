@@ -53,6 +53,13 @@ type Comment {
   updatedAt: String!
 }
 
+type PostCounter {
+  postId: String!
+  likesCount: Int!
+  commentsCount: Int!
+  sharesCount: Int!
+}
+
 input PostImageInput {
   imageBase64: String!
   mimeType: String
@@ -64,8 +71,8 @@ type Query {
   me: User
   allPost(limit: Int): [Post!]!
   userPost(limit: Int): [Post!]!
-  comment(postId: String!, limit: Int): [Comment!]!
-  allLike(limit: Int): [Post!]!
+  postCounters(limit: Int): [PostCounter!]!
+  userComment(limit: Int): [Comment!]!
   userLike(limit: Int): [Post!]!
   myFeed(limit: Int): [Post!]!
 }

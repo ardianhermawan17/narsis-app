@@ -54,12 +54,12 @@ final class CommentController
     /**
      * @return array{status:int,body:array<string,mixed>}
      */
-    public function list(string $postId, int $limit = 20): array
+    public function listByUser(User $user, int $limit = 20): array
     {
         return [
             'status' => 200,
             'body' => [
-                'comments' => $this->listCommentsQueryHandler->handle($postId, $limit),
+                'comments' => $this->listCommentsQueryHandler->handle($user->id(), $limit),
             ],
         ];
     }

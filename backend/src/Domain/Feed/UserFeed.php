@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\ReadModel;
+namespace App\Domain\Feed;
 
-final class UserFeedItem
+final class UserFeed
 {
     /**
      * @param array<int, array<string, mixed>> $images

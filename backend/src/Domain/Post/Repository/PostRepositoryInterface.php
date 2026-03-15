@@ -29,4 +29,9 @@ interface PostRepositoryInterface
      * @return array<int, array<string, mixed>>
      */
     public function findLikedByUserIdWithImages(string $userId, int $limit = 20): array;
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function findPostCounters(int $limit = 20): array;
 }

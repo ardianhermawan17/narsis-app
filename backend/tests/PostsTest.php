@@ -171,4 +171,24 @@ final class PostsTest extends TestCase
         $this->assertNoGraphqlErrors($result);
         self::assertIsArray($result['data']['userPost'] ?? null, '/v1/user-post must return userPost array.');
     }
+
+    public function testPostCountersQueryAndResourceRouteReturnCounterFields(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $queryResult = $this->postJson($this->graphqlUrl(), 'query { postCounters(limit: 5) { postId likesCount commentsCount sharesCount } }');
+        $this->assertNoGraphqlErrors($queryResult);
+        self::assertIsArray($queryResult['data']['postCounters'] ?? null);
+
+        $routeResult = $this->postJson($this->resourceUrl('post-counters'), '{}');
+        $this->assertNoGraphqlErrors($routeResult);
+        self::assertIsArray($routeResult['data']['postCounters'] ?? null);
+
+        if (!empty($routeResult['data']['postCounters'])) {
+            self::assertArrayHasKey('postId', $routeResult['data']['postCounters'][0]);
+            self::assertArrayHasKey('likesCount', $routeResult['data']['postCounters'][0]);
+            self::assertArrayHasKey('commentsCount', $routeResult['data']['postCounters'][0]);
+            self::assertArrayHasKey('sharesCount', $routeResult['data']['postCounters'][0]);
+        }
+    }
 }

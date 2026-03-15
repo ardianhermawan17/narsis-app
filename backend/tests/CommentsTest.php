@@ -131,6 +131,19 @@ final class CommentsTest extends TestCase
         return $postId;
     }
 
+    private function pickAnyPublicPostId(): string
+    {
+        $result = $this->postJson($this->graphqlUrl(), 'query { allPost(limit: 1) { id } }');
+        $this->assertNoGraphqlErrors($result);
+
+        $postId = $result['data']['allPost'][0]['id'] ?? '';
+        if ($postId === '') {
+            $this->markTestSkipped('No public post is available for comment tests.');
+        }
+
+        return $postId;
+    }
+
     public function testAddCommentCommandHoldsInputValues(): void
     {
         $command = new AddCommentCommand('post-123', 'user-456', 'hello world', 'parent-789');
@@ -250,12 +263,12 @@ final class CommentsTest extends TestCase
         $handler->handle(new AddCommentCommand('post-404', 'user-456', 'hello world'));
     }
 
-    public function testListCommentsQueryHandlerRequiresPostId(): void
+    public function testListCommentsQueryHandlerRequiresUserId(): void
     {
         $handler = new ListCommentsQueryHandler($this->createMock(CommentRepositoryInterface::class));
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('postId is required.');
+        $this->expectExceptionMessage('userId is required.');
 
         $handler->handle('   ');
     }
@@ -264,12 +277,12 @@ final class CommentsTest extends TestCase
     {
         $comments = $this->createMock(CommentRepositoryInterface::class);
         $comments->expects(self::once())
-            ->method('findByPostId')
-            ->with('post-123', 100)
+            ->method('findByUserId')
+            ->with('user-123', 100)
             ->willReturn([]);
 
         $handler = new ListCommentsQueryHandler($comments);
-        $result = $handler->handle('post-123', 999);
+        $result = $handler->handle('user-123', 999);
 
         self::assertSame([], $result);
     }
@@ -294,12 +307,28 @@ final class CommentsTest extends TestCase
         );
     }
 
-    public function testAddCommentAndReadViaCommentResourceRoute(): void
+    public function testUserCommentQueriesRequireAuth(): void
+    {
+        $this->skipIfEndpointUnreachable();
+
+        $result = $this->postJson(
+            $this->graphqlUrl(),
+            'query { userComment { id } }'
+        );
+
+        self::assertNotEmpty($result['errors'] ?? []);
+        self::assertStringContainsString(
+            'Missing or invalid Authorization header',
+            $result['errors'][0]['message'] ?? ''
+        );
+    }
+
+    public function testAddCommentAndReadViaUserCommentResourceRoute(): void
     {
         $this->skipIfEndpointUnreachable();
 
         $accessToken = $this->loginAsSeedUser();
-        $postId = $this->createTestPost($accessToken);
+        $postId = $this->pickAnyPublicPostId();
 
         $content = 'comment body ' . (string) microtime(true);
         $added = $this->postJson(
@@ -318,18 +347,18 @@ final class CommentsTest extends TestCase
         self::assertNotEmpty($added['data']['addComment']['id'] ?? null);
 
         $listed = $this->postJson(
-            $this->resourceUrl('comment'),
+            $this->resourceUrl('user-comment'),
             '{}',
             [
-                'postId' => $postId,
                 'limit' => 5,
-            ]
+            ],
+            $accessToken
         );
 
         $this->assertNoGraphqlErrors($listed);
-        self::assertIsArray($listed['data']['comment'] ?? null);
-        self::assertNotEmpty($listed['data']['comment']);
-        self::assertSame($postId, $listed['data']['comment'][0]['postId'] ?? null);
-        self::assertSame($content, $listed['data']['comment'][0]['content'] ?? null);
+        self::assertIsArray($listed['data']['userComment'] ?? null);
+        self::assertNotEmpty($listed['data']['userComment']);
+        self::assertSame($postId, $listed['data']['userComment'][0]['postId'] ?? null);
+        self::assertSame($content, $listed['data']['userComment'][0]['content'] ?? null);
     }
 }

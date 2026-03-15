@@ -12,6 +12,7 @@ use App\Application\Command\RefreshToken\RefreshTokenHandler;
 use App\Application\Command\RegisterUser\RegisterUserHandler;
 use App\Application\GraphQL\Resource\TopLevelResourceExtractor;
 use App\Application\GraphQL\Validation\GraphQlDocumentLimiter;
+use App\Application\Query\ListPostCounters\ListPostCountersQueryHandler;
 use App\Application\Query\ListComments\ListCommentsQueryHandler;
 use App\Application\Query\ListPosts\ListPostsQueryHandler;
 use App\Application\Query\ListUserFeed\ListUserFeedQueryHandler;
@@ -100,6 +101,7 @@ $likePostHandler = new LikePostHandler($likeRepository, $postRepository, $userFe
 $unlikePostHandler = new UnlikePostHandler($likeRepository, $postRepository, $pdo);
 $listCommentsQueryHandler = new ListCommentsQueryHandler($commentRepository);
 $listPostsQueryHandler = new ListPostsQueryHandler($postRepository);
+$listPostCountersQueryHandler = new ListPostCountersQueryHandler($postRepository);
 $listUserPostsQueryHandler = new ListUserPostsQueryHandler($postRepository);
 $listUserLikesQueryHandler = new ListUserLikesQueryHandler($postRepository);
 $listUserFeedQueryHandler = new ListUserFeedQueryHandler($userFeedRepository);
@@ -113,6 +115,7 @@ $commentController = new CommentController($addCommentHandler, $listCommentsQuer
 $postController = new PostController(
     $createPostHandler,
     $listPostsQueryHandler,
+    $listPostCountersQueryHandler,
     $listUserPostsQueryHandler,
     $listUserLikesQueryHandler,
     $likePostHandler,
@@ -140,15 +143,16 @@ $schemaRegistry = new SchemaRegistry([
     'createpost' => 'post',
     'userpost' => 'post',
     'user-post' => 'post',
-    'comment' => 'comment',
+    'postcounters' => 'post',
+    'post-counters' => 'post',
+    'usercomment' => 'comment',
+    'user-comment' => 'comment',
     'addcomment' => 'comment',
     'likepost' => 'like',
     'unlikepost' => 'like',
-    'alllike' => 'like',
     'userlike' => 'like',
     'user-like' => 'like',
     'myfeed' => 'feed',
-    'like' => 'like',
     'feed' => 'feed',
 ]);
 

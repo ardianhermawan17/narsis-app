@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence;
 
-use App\ReadModel\UserFeedItem;
-use App\ReadModel\Repository\UserFeedRepositoryInterface;
+use App\Domain\Feed\Repository\UserFeedRepositoryInterface;
+use App\Domain\Feed\UserFeed;
 
 final class PgUserFeedRepository implements UserFeedRepositoryInterface
 {
@@ -61,7 +61,7 @@ final class PgUserFeedRepository implements UserFeedRepositoryInterface
     }
 
     /**
-     * @return array<int, UserFeedItem>
+     * @return array<int, UserFeed>
      */
     public function findByUserId(string $userId, int $limit = 20): array
     {
@@ -137,7 +137,7 @@ final class PgUserFeedRepository implements UserFeedRepositoryInterface
 
         $feed = [];
         foreach ($grouped as $post) {
-            $feed[] = new UserFeedItem(
+            $feed[] = new UserFeed(
                 (string) $post['id'],
                 (string) $post['userId'],
                 isset($post['caption']) ? (string) $post['caption'] : null,

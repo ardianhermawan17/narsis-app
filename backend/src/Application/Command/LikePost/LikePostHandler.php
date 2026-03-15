@@ -6,10 +6,10 @@ namespace App\Application\Command\LikePost;
 
 use App\Application\Exception\AlreadyLikedException;
 use App\Application\Exception\ValidationException;
+use App\Domain\Feed\Repository\UserFeedRepositoryInterface;
 use App\Domain\Like\Repository\LikeRepositoryInterface;
 use App\Domain\Post\Repository\PostRepositoryInterface;
 use App\Infrastructure\ID\SnowflakeGenerator;
-use App\ReadModel\Repository\UserFeedRepositoryInterface;
 
 final class LikePostHandler
 {
