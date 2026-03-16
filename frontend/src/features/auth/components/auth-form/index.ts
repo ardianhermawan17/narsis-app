@@ -1,8 +1,2 @@
-import { createElement } from 'react'
-import { AuthForm as AuthFormUI } from './auth-form'
-import { useAuthForm } from './use-auth-form'
-
-export function AuthForm() {
-	const props = useAuthForm()
-	return createElement(AuthFormUI, props)
-}
+export * from "./use-auth-form"
+export * from "./auth-form"

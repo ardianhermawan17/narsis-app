@@ -18,7 +18,7 @@ export function useAuth() {
     const { data: meData } = await authApi.me()
     if (meData?.me) setUser(meData.me)
 
-    router.replace('/feed')
+    router.replace('/post')
   }
 
   const register = async (values: RegisterFormValues): Promise<void> => {
@@ -38,7 +38,7 @@ export function useAuth() {
       await authApi.logout(refreshToken)
     }
     clearAuth()
-    router.replace('/login')
+    router.replace('/auth')
   }
 
   return { user, isAuthenticated, accessToken, login, register, logout }

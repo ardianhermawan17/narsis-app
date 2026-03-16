@@ -1,13 +1,40 @@
-"use client";
+'use client'
 
-import {toast} from "sonner";
+import { useEffect, useRef } from 'react'
+import type { ReactNode } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/features/auth/store/auth.store'
 
 interface AuthGuardProps {
-    children: React.ReactNode;
+    children: ReactNode
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-    // Do auth check here make sure use Zustand for checking. After that use "sonner" from shadcn
+    const router = useRouter()
+    const pathname = usePathname()
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+    const hasWarned = useRef(false)
 
-    return <>{children}</>;
+    useEffect(() => {
+        if (isAuthenticated) {
+            hasWarned.current = false
+            return
+        }
+
+        if (!hasWarned.current) {
+            toast.warning('Please login first')
+            hasWarned.current = true
+        }
+
+        if (pathname !== '/auth') {
+            router.replace('/auth')
+        }
+    }, [isAuthenticated, pathname, router])
+
+    if (!isAuthenticated && pathname !== '/auth') {
+        return null
+    }
+
+    return <>{children}</>
 }
