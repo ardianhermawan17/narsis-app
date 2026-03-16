@@ -1,35 +1,40 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 
+RUN apk add --no-cache python3 make g++ libc6-compat
+
 COPY package.json package-lock.json* ./
-RUN npm ci --silent
 
+RUN npm ci --silent || npm install --silent
 
-FROM node:22-alpine AS build
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+ENV NODE_ENV=production
 
 RUN npm run build
 
-
-FROM node:22-alpine AS dev
+FROM node:22-alpine AS runner
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+RUN apk add --no-cache ca-certificates
 
-EXPOSE 5173
-CMD ["npm", "run", "dev"]
+ENV NODE_ENV=production
+ENV PORT=3000
 
+COPY package.json package-lock.json* ./
 
-FROM node:22-alpine AS production
-WORKDIR /app
+RUN npm ci --production --silent || npm install --production --silent
 
-RUN npm install -g serve
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.* ./
 
-COPY --from=build /app/dist ./dist
+EXPOSE ${PORT}
 
-EXPOSE 3000
-CMD ["serve", "-s", "dist", "-l", "3000"]
+USER node
+
+CMD ["npm", "run", "start"]

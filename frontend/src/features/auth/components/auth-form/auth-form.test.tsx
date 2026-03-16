@@ -1,141 +1,89 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthForm } from './auth-form';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { AuthForm } from './index'
 
-const replaceMock = vi.fn();
-const dispatchMock = vi.fn();
+const loginMock = vi.fn(async (): Promise<void> => undefined)
+const registerMock = vi.fn(async (): Promise<void> => undefined)
 
-const loginUnwrapMock = vi.fn();
-const signupUnwrapMock = vi.fn();
-
-const loginMutationMock = vi.fn(() => ({
-	unwrap: loginUnwrapMock,
-}));
-
-const signupMutationMock = vi.fn(() => ({
-	unwrap: signupUnwrapMock,
-}));
-
-vi.mock('next/navigation', () => ({
-	useRouter: () => ({
-		replace: replaceMock,
-	}),
-}));
-
-vi.mock('@shared/config/redux/hooks', () => ({
-	useAppDispatch: () => dispatchMock,
-}));
-
-vi.mock('@feature/auth/api/auth-api', () => ({
-	useLoginMutation: () => [loginMutationMock],
-	useSignupMutation: () => [signupMutationMock],
-}));
-
-vi.mock('sonner', () => ({
-	toast: {
-		loading: vi.fn(() => 'toast-id'),
-		success: vi.fn(),
-		error: vi.fn(),
-	},
-}));
+vi.mock('../../hooks/use-auth', () => ({
+  useAuth: () => ({
+    login: loginMock,
+    register: registerMock,
+    logout: vi.fn(),
+    user: null,
+    isAuthenticated: false,
+    accessToken: null,
+  }),
+}))
 
 describe('AuthForm', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		loginUnwrapMock.mockResolvedValue({});
-		signupUnwrapMock.mockResolvedValue({});
-	});
+  beforeEach(() => {
+    vi.clearAllMocks()
+    loginMock.mockResolvedValue(undefined)
+    registerMock.mockResolvedValue(undefined)
+  })
 
-	it('shows login mode by default and toggles to signup/login', async () => {
-		render(<AuthForm />);
+  it('shows login tab by default and can switch to register', async () => {
+    render(<AuthForm />)
 
-		expect(screen.getByText('login')).toBeTruthy();
-		expect(screen.getByPlaceholderText('Email')).toBeTruthy();
-		expect(screen.getByPlaceholderText('Password')).toBeTruthy();
-		expect(screen.queryByPlaceholderText('Display Name')).toBeNull();
-		expect(screen.getByRole('button', { name: 'Login' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Login' }).getAttribute('data-state')).toBe('active')
+    expect(screen.getByLabelText('Username or email')).toBeTruthy()
 
-		fireEvent.click(screen.getByRole('button', { name: 'Sign up' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Register' }))
 
-		await waitFor(() => {
-			expect(screen.getByText('signup')).toBeTruthy();
-			expect(screen.getByPlaceholderText('Display Name')).toBeTruthy();
-			expect(screen.getByRole('button', { name: 'Sign Up' })).toBeTruthy();
-		});
+    await waitFor(() => {
+      expect(screen.getByLabelText('Username')).toBeTruthy()
+      expect(screen.getByLabelText('Confirm password')).toBeTruthy()
+    })
+  })
 
-		fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+  it('submits login values', async () => {
+    render(<AuthForm />)
 
-		await waitFor(() => {
-			expect(screen.getByText('login')).toBeTruthy();
-			expect(screen.queryByPlaceholderText('Display Name')).toBeNull();
-		});
-	});
+    fireEvent.change(screen.getByLabelText('Username or email'), {
+      target: { value: 'user@example.com' },
+    })
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'secret123' },
+    })
 
-	it('shows required validation for email, password, and display_name in signup mode', async () => {
-		render(<AuthForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'Login' }))
 
-		fireEvent.click(screen.getByRole('button', { name: 'Sign up' }));
-		fireEvent.click(screen.getByRole('button', { name: 'Sign Up' }));
+    await waitFor(() => {
+      expect(loginMock).toHaveBeenCalledWith({
+        usernameOrEmail: 'user@example.com',
+        password: 'secret123',
+      })
+    })
+  })
 
-		await waitFor(() => {
-			expect(screen.getByText('Email is required')).toBeTruthy();
-			expect(screen.getByText('Display name is required')).toBeTruthy();
-			expect(screen.getByText('Password is required')).toBeTruthy();
-		});
+  it('submits register values', async () => {
+    render(<AuthForm />)
 
-		expect(loginMutationMock).not.toHaveBeenCalled();
-		expect(signupMutationMock).not.toHaveBeenCalled();
-	});
+    fireEvent.click(screen.getByRole('tab', { name: 'Register' }))
 
-	it('submits login values correctly', async () => {
-		render(<AuthForm />);
+    fireEvent.change(screen.getByLabelText('Username'), {
+      target: { value: 'newuser' },
+    })
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'new@example.com' },
+    })
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'secret123' },
+    })
+    fireEvent.change(screen.getByLabelText('Confirm password'), {
+      target: { value: 'secret123' },
+    })
 
-		fireEvent.change(screen.getByPlaceholderText('Email'), {
-			target: { value: 'login@example.com' },
-		});
-		fireEvent.change(screen.getByPlaceholderText('Password'), {
-			target: { value: 'secret123' },
-		});
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }))
 
-		fireEvent.click(screen.getByRole('button', { name: 'Login' }));
-
-		await waitFor(() => {
-			expect(loginMutationMock).toHaveBeenCalledWith({
-				email: 'login@example.com',
-				password: 'secret123',
-			});
-			expect(replaceMock).toHaveBeenCalledWith('/draft-history');
-		});
-
-		expect(signupMutationMock).not.toHaveBeenCalled();
-	});
-
-	it('submits signup values correctly', async () => {
-		render(<AuthForm />);
-
-		fireEvent.click(screen.getByRole('button', { name: 'Sign up' }));
-
-		fireEvent.change(screen.getByPlaceholderText('Email'), {
-			target: { value: 'signup@example.com' },
-		});
-		fireEvent.change(screen.getByPlaceholderText('Display Name'), {
-			target: { value: 'New User' },
-		});
-		fireEvent.change(screen.getByPlaceholderText('Password'), {
-			target: { value: 'secret123' },
-		});
-
-		fireEvent.click(screen.getByRole('button', { name: 'Sign Up' }));
-
-		await waitFor(() => {
-			expect(signupMutationMock).toHaveBeenCalledWith({
-				email: 'signup@example.com',
-				password: 'secret123',
-				display_name: 'New User',
-			});
-			expect(replaceMock).toHaveBeenCalledWith('/draft-history');
-		});
-
-		expect(loginMutationMock).not.toHaveBeenCalled();
-	});
-});
+    await waitFor(() => {
+      expect(registerMock).toHaveBeenCalledWith({
+        username: 'newuser',
+        email: 'new@example.com',
+        password: 'secret123',
+        confirmPassword: 'secret123',
+      })
+    })
+  })
+})
