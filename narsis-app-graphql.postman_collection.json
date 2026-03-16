@@ -1,0 +1,1371 @@
+{
+  "info": {
+    "_postman_id": "192e63b4-6d82-4b07-8abf-63514ccc51d1",
+    "name": "narsis-app-graphql",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "10309439"
+  },
+  "item": [
+    {
+      "name": "v1",
+      "item": [
+        {
+          "name": "authenticate -all resources",
+          "item": [
+            {
+              "name": "Register",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation Register($u: String!, $e: String!, $p: String!) { register(username: $u, email: $e, password: $p) { id username email displayName createdAt updatedAt } }\",\r\n  \"variables\": {\r\n    \"u\": \"gqltestuser1773465470\",\r\n    \"e\": \"gqltestuser1773465470@narsis.test\",\r\n    \"p\": \"password\"\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "auth"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "// Parse the response body\r",
+                      "let response = pm.response.json();\r",
+                      "\r",
+                      "// Get the login value\r",
+                      "let token = response.data.login.accessToken;\r",
+                      "let refresh_token = response.data.login.refreshToken\r",
+                      "\r",
+                      "// Save it to environment variable\r",
+                      "pm.environment.set(\"access_token\", token);\r",
+                      "pm.environment.set(\"refresh_token\", refresh_token);\r",
+                      "\r",
+                      "// Optional: log to console for debugging\r",
+                      "console.log(\"Access token set:\", token);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation Login($u: String!, $p: String!) { login(usernameOrEmail: $u, password: $p){ accessToken refreshToken tokenType expiresIn } }\",\r\n  \"variables\": {\r\n    \"u\": \"ardian@gmail.com\",\r\n    \"p\": \"password\"\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "auth"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Refresh Token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation RefreshToken($r: String!) { refreshToken(refreshToken: $r) { accessToken refreshToken tokenType expiresIn } }\",\r\n  \"variables\": {\r\n    \"r\": \"{{refresh_token}}\"\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "auth"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Logout",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation Logout($r: String!) { logout(refreshToken: $r) }\",\r\n  \"variables\": {\r\n    \"r\": \"{{refresh_token}}\"\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "auth"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "posts - all resources",
+          "item": [
+            {
+              "name": "create-post",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation CreatePost($caption: String, $visibility: String, $images: [PostImageInput!]!) { createPost(caption: $caption, visibility: $visibility, images: $images) { id caption createdAt } }\",\r\n  \"variables\": {\r\n    \"caption\": \"Nasib jadi WNI harus banyak sabar\",\r\n    \"visibility\": \"PUBLIC\",\r\n    \"images\": [\r\n      {\r\n        \"imageBase64\": \"{{base64_image}}\",\r\n        \"mimeType\": \"image/jpeg\",\r\n        \"altText\": \"Wah apatuh bang\",\r\n        \"isPrimary\": false\r\n      }\r\n    ]\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/post",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "post"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "when-duplicate-image",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n  \"query\": \"mutation CreatePost($caption: String, $visibility: String, $images: [PostImageInput!]!) { createPost(caption: $caption, visibility: $visibility, images: $images) { id caption createdAt } }\",\r\n  \"variables\": {\r\n    \"caption\": \"Nasib jadi WNI harus banyak sabar\",\r\n    \"visibility\": \"PUBLIC\",\r\n    \"images\": [\r\n      {\r\n        \"imageBase64\": \"{{base64_image}}\",\r\n        \"mimeType\": \"image/jpeg\",\r\n        \"altText\": \"Wah apatuh bang\",\r\n        \"isPrimary\": false\r\n      }\r\n    ]\r\n  }\r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/v1/posts",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "posts"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Date",
+                      "value": "Sat, 14 Mar 2026 11:02:48 GMT"
+                    },
+                    {
+                      "key": "Server",
+                      "value": "Apache/2.4.66 (Debian)"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.30"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "151"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"errors\": [\n        {\n            \"message\": \"Uploaded image is considered duplicate by fingerprint validation.\",\n            \"locations\": [\n                {\n                    \"line\": 1,\n                    \"column\": 91\n                }\n            ],\n            \"path\": [\n                \"createPost\"\n            ]\n        }\n    ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "get-all-posts",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"operationName\": \"GetAllPosts\",\r\n  \"query\": \"query GetAllPosts($limit: Int) { allPost(limit: $limit) { id caption likesCount } }\",\r\n  \"variables\": {\r\n    \"limit\": 5\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/post",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "post"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "when-duplicate-image",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n  \"query\": \"mutation CreatePost($caption: String, $visibility: String, $images: [PostImageInput!]!) { createPost(caption: $caption, visibility: $visibility, images: $images) { id caption createdAt } }\",\r\n  \"variables\": {\r\n    \"caption\": \"Nasib jadi WNI harus banyak sabar\",\r\n    \"visibility\": \"PUBLIC\",\r\n    \"images\": [\r\n      {\r\n        \"imageBase64\": \"{{base64_image}}\",\r\n        \"mimeType\": \"image/jpeg\",\r\n        \"altText\": \"Wah apatuh bang\",\r\n        \"isPrimary\": false\r\n      }\r\n    ]\r\n  }\r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/v1/posts",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "posts"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Date",
+                      "value": "Sat, 14 Mar 2026 11:02:48 GMT"
+                    },
+                    {
+                      "key": "Server",
+                      "value": "Apache/2.4.66 (Debian)"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.30"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "151"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"errors\": [\n        {\n            \"message\": \"Uploaded image is considered duplicate by fingerprint validation.\",\n            \"locations\": [\n                {\n                    \"line\": 1,\n                    \"column\": 91\n                }\n            ],\n            \"path\": [\n                \"createPost\"\n            ]\n        }\n    ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "get-user-post",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"operationName\": \"GetUserPosts\",\r\n  \"query\": \"query GetUserPosts($limit: Int) { userPost(limit: $limit) { id caption likesCount } }\",\r\n  \"variables\": {\r\n    \"limit\": 5\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/post",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "post"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "when-duplicate-image",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n  \"query\": \"mutation CreatePost($caption: String, $visibility: String, $images: [PostImageInput!]!) { createPost(caption: $caption, visibility: $visibility, images: $images) { id caption createdAt } }\",\r\n  \"variables\": {\r\n    \"caption\": \"Nasib jadi WNI harus banyak sabar\",\r\n    \"visibility\": \"PUBLIC\",\r\n    \"images\": [\r\n      {\r\n        \"imageBase64\": \"{{base64_image}}\",\r\n        \"mimeType\": \"image/jpeg\",\r\n        \"altText\": \"Wah apatuh bang\",\r\n        \"isPrimary\": false\r\n      }\r\n    ]\r\n  }\r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/v1/posts",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "posts"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Date",
+                      "value": "Sat, 14 Mar 2026 11:02:48 GMT"
+                    },
+                    {
+                      "key": "Server",
+                      "value": "Apache/2.4.66 (Debian)"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.30"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "151"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"errors\": [\n        {\n            \"message\": \"Uploaded image is considered duplicate by fingerprint validation.\",\n            \"locations\": [\n                {\n                    \"line\": 1,\n                    \"column\": 91\n                }\n            ],\n            \"path\": [\n                \"createPost\"\n            ]\n        }\n    ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "get-post-counter",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/v1/post-counters",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "post-counters"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "when-duplicate-image",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n  \"query\": \"mutation CreatePost($caption: String, $visibility: String, $images: [PostImageInput!]!) { createPost(caption: $caption, visibility: $visibility, images: $images) { id caption createdAt } }\",\r\n  \"variables\": {\r\n    \"caption\": \"Nasib jadi WNI harus banyak sabar\",\r\n    \"visibility\": \"PUBLIC\",\r\n    \"images\": [\r\n      {\r\n        \"imageBase64\": \"{{base64_image}}\",\r\n        \"mimeType\": \"image/jpeg\",\r\n        \"altText\": \"Wah apatuh bang\",\r\n        \"isPrimary\": false\r\n      }\r\n    ]\r\n  }\r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/v1/posts",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "posts"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Date",
+                      "value": "Sat, 14 Mar 2026 11:02:48 GMT"
+                    },
+                    {
+                      "key": "Server",
+                      "value": "Apache/2.4.66 (Debian)"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.30"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "151"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"errors\": [\n        {\n            \"message\": \"Uploaded image is considered duplicate by fingerprint validation.\",\n            \"locations\": [\n                {\n                    \"line\": 1,\n                    \"column\": 91\n                }\n            ],\n            \"path\": [\n                \"createPost\"\n            ]\n        }\n    ]\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "likes - all resources",
+          "item": [
+            {
+              "name": "like-post",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation LikePost($postId: String!) { likePost(postId: $postId) { id caption visibility likesCount } }\",\r\n  \"variables\": {\r\n    \"postId\": \"1375957034096656384\"\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/like",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "like"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get-like",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"operationName\": \"GetAllLikes\",\r\n  \"query\": \"query GetAllLikes($limit: Int) { allLike(limit: $limit) { id caption likesCount } }\",\r\n  \"variables\": {\r\n    \"limit\": 5\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/like",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "like"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get-user-like",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"operationName\": \"GetUserLikes\",\r\n  \"query\": \"query GetUserLikes($limit: Int) { userLike(limit: $limit) { id caption likesCount } }\",\r\n  \"variables\": {\r\n    \"limit\": 5\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/like",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "like"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "unlike-post",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation UnlikePost($postId: String!) { unlikePost(postId: $postId) { id caption visibility likesCount } }\",\r\n  \"variables\": {\r\n    \"postId\": \"1375957034096656384\"\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/like",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "like"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Comment - all resources",
+          "item": [
+            {
+              "name": "add-comment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation AddComment($postId: String!, $content: String!, $parentCommentId: String) { addComment(postId: $postId, content: $content, parentCommentId: $parentCommentId) { id postId userId content parentCommentId createdAt } }\",\r\n  \"variables\": {\r\n    \"postId\": \"1375957034096656384\",\r\n    \"content\": \"This is a test comment from Postman.\",\r\n    \"parentCommentId\": null\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/comment",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "comment"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "add-comment-from-parent-comment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation AddComment($postId: String!, $content: String!, $parentCommentId: String) { addComment(postId: $postId, content: $content, parentCommentId: $parentCommentId) { id postId userId content parentCommentId createdAt } }\",\r\n  \"variables\": {\r\n    \"postId\": \"1375957034096656384\",\r\n    \"content\": \"Yang diatas commentnya bagus.\",\r\n    \"parentCommentId\": \"1376754930379390976\"\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/comment",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "comment"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get-comment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"query GetComments($postId: String!, $limit: Int) { comment(postId: $postId, limit: $limit) { id content  createdAt } }\",\r\n  \"variables\": {\r\n    \"postId\": \"1375957034096656384\",\r\n    \"limit\": 10\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v1/comment",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "comment"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Feed - all resources",
+          "item": [
+            {
+              "name": "get-my-feed",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/v1/feed",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "feed"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "when-duplicate-image",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n  \"query\": \"mutation CreatePost($caption: String, $visibility: String, $images: [PostImageInput!]!) { createPost(caption: $caption, visibility: $visibility, images: $images) { id caption createdAt } }\",\r\n  \"variables\": {\r\n    \"caption\": \"Nasib jadi WNI harus banyak sabar\",\r\n    \"visibility\": \"PUBLIC\",\r\n    \"images\": [\r\n      {\r\n        \"imageBase64\": \"{{base64_image}}\",\r\n        \"mimeType\": \"image/jpeg\",\r\n        \"altText\": \"Wah apatuh bang\",\r\n        \"isPrimary\": false\r\n      }\r\n    ]\r\n  }\r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/v1/posts",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "posts"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Date",
+                      "value": "Sat, 14 Mar 2026 11:02:48 GMT"
+                    },
+                    {
+                      "key": "Server",
+                      "value": "Apache/2.4.66 (Debian)"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.30"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "151"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"errors\": [\n        {\n            \"message\": \"Uploaded image is considered duplicate by fingerprint validation.\",\n            \"locations\": [\n                {\n                    \"line\": 1,\n                    \"column\": 91\n                }\n            ],\n            \"path\": [\n                \"createPost\"\n            ]\n        }\n    ]\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "base-graphql",
+      "item": [
+        {
+          "name": "posts",
+          "item": [
+            {
+              "name": "create-post",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation CreatePost($caption: String, $visibility: String, $images: [PostImageInput!]!) { createPost(caption: $caption, visibility: $visibility, images: $images) { id caption createdAt } }\",\r\n  \"variables\": {\r\n    \"caption\": \"A snowy night at the dome\",\r\n    \"visibility\": \"PUBLIC\",\r\n    \"images\": [\r\n      {\r\n        \"imageBase64\": \"{{base64_image}}\",\r\n        \"mimeType\": \"image/jpeg\",\r\n        \"altText\": \"Dome with red entrance in snow\",\r\n        \"isPrimary\": false\r\n      }\r\n    ]\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/graphql",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "graphql"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "when-duplicate-image",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n  \"query\": \"mutation CreatePost($caption: String, $visibility: String, $images: [PostImageInput!]!) { createPost(caption: $caption, visibility: $visibility, images: $images) { id caption createdAt } }\",\r\n  \"variables\": {\r\n    \"caption\": \"A snowy night at the dome\",\r\n    \"visibility\": \"PUBLIC\",\r\n    \"images\": [\r\n      {\r\n        \"imageBase64\": \"{{base64_image}}\",\r\n        \"mimeType\": \"image/jpeg\",\r\n        \"altText\": \"Dome with red entrance in snow\",\r\n        \"isPrimary\": false\r\n      }\r\n    ]\r\n  }\r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/graphql",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "graphql"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Date",
+                      "value": "Sat, 14 Mar 2026 11:03:36 GMT"
+                    },
+                    {
+                      "key": "Server",
+                      "value": "Apache/2.4.66 (Debian)"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.30"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "151"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"errors\": [\n        {\n            \"message\": \"Uploaded image is considered duplicate by fingerprint validation.\",\n            \"locations\": [\n                {\n                    \"line\": 1,\n                    \"column\": 91\n                }\n            ],\n            \"path\": [\n                \"createPost\"\n            ]\n        }\n    ]\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "authenticate",
+          "item": [
+            {
+              "name": "Register",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation Register($u: String!, $e: String!, $p: String!) { register(username: $u, email: $e, password: $p) { id username email displayName createdAt updatedAt } }\",\r\n  \"variables\": {\r\n    \"u\": \"gqltestuser1773465470\",\r\n    \"e\": \"gqltestuser1773465470@narsis.test\",\r\n    \"p\": \"password\"\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/graphql",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "graphql"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "// Parse the response body\r",
+                      "let response = pm.response.json();\r",
+                      "\r",
+                      "// Get the login value\r",
+                      "let token = response.data.login.accessToken;\r",
+                      "let refresh_token = response.data.login.refreshToken\r",
+                      "\r",
+                      "// Save it to environment variable\r",
+                      "pm.environment.set(\"access_token\", token);\r",
+                      "pm.environment.set(\"refresh_token\", refresh_token);\r",
+                      "\r",
+                      "// Optional: log to console for debugging\r",
+                      "console.log(\"Access token set:\", token);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation Login($u: String!, $p: String!) { login(usernameOrEmail: $u, password: $p){ accessToken refreshToken tokenType expiresIn } }\",\r\n  \"variables\": {\r\n    \"u\": \"ardian@gmail.com\",\r\n    \"p\": \"password\"\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/graphql",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "graphql"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Refresh Token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"query\": \"mutation RefreshToken($r: String!) { refreshToken(refreshToken: $r) { accessToken refreshToken tokenType expiresIn } }\",\r\n  \"variables\": {\r\n    \"r\": \"{{refresh_token}}\"\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/graphql",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "graphql"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "profile",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "graphql-schema",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/graphql/schema",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "graphql",
+            "schema"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
