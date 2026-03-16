@@ -3,7 +3,7 @@ import { authExchange } from '@urql/exchange-auth'
 import { useAuthStore } from '@/features/auth/store/auth.store'
 import type { AuthTokenPair } from '@/shared/types/entities'
 
-const GRAPHQL_URL = process.env.NEXT_PUBLIC_GRAPHQL_URL ?? 'http://localhost:8000/graphql'
+const GRAPHQL_URL = process.env.NEXT_PUBLIC_GRAPHQL_URL ?? 'http://localhost:8080/graphql'
 
 const REFRESH_TOKEN_MUTATION = `
   mutation RefreshToken($refreshToken: String!) {
