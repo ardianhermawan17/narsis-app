@@ -32,7 +32,6 @@ export function DarkModeToggle({ className, variant = "auto" }: DarkModeTogglePr
   }
 
   const label = isDark ? "Light mode" : "Dark mode"
-  const Icon = isDark ? Sun : Moon
 
   /**
    * Desktop pill — used in left-side nav

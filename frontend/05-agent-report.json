@@ -1,0 +1,49 @@
+{
+  "agent": "github-copilot",
+  "feature": "post",
+  "version": "1.0.0",
+  "status": "complete",
+  "checklist": {
+    "instagram_like_ui": true,
+    "post_card_header_avatar_right": true,
+    "image_carousel_shadcn": false,
+    "like_icon_red_on_click": true,
+    "comment_icon_dialog_on_click": true,
+    "comment_dialog_ratio_1_1": true,
+    "caption_below_icons": true,
+    "infinite_scrolling": true,
+    "zustand_store": true,
+    "graphql_queries_mutations": true,
+    "folder_structure_mirrors_auth": true,
+    "ui_logic_separated": true,
+    "page_registered_at_app_post": true,
+    "agent_report_created": true
+  },
+  "files_created": [
+    ".github/agents/narsis-frontend-feature.agent.md",
+    "src/features/post/index.ts",
+    "src/features/post/types/post.types.ts",
+    "src/features/post/store/post.store.ts",
+    "src/features/post/graphql/queries.ts",
+    "src/features/post/graphql/mutations.ts",
+    "src/features/post/api/post.api.ts",
+    "src/features/post/components/post-card/index.tsx",
+    "src/features/post/components/post-card/post-card.tsx",
+    "src/features/post/components/post-card/post-card.hooks.ts",
+    "src/features/post/components/post-feed/index.tsx",
+    "src/features/post/components/post-feed/post-feed.tsx",
+    "src/features/post/components/post-feed/post-feed.hooks.ts",
+    "src/features/post/components/comment-dialog/index.tsx",
+    "src/features/post/components/comment-dialog/comment-dialog.tsx",
+    "src/features/post/components/comment-dialog/comment-dialog.hooks.ts",
+    "src/app/(main-layout)/post/page.tsx",
+    "05-agent-report.json"
+  ],
+  "dependencies_required": ["zustand", "urql", "lucide-react"],
+  "notes": [
+    "documentation/ was treated as the source of truth when the prompt examples conflicted with the repo architecture.",
+    "The backend schema does not expose post author profile fields, so the UI derives a fallback username from userId for non-self posts.",
+    "The backend schema does not expose cursor pagination, so infinite scrolling progressively increases the limit and appends the newly revealed items.",
+    "The repo does not currently ship shadcn Carousel or Dialog primitives, so the gallery and dialog behavior were implemented locally without adding new dependencies."
+  ]
+}
