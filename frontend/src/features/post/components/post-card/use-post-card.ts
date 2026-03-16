@@ -40,7 +40,6 @@ interface UsePostCardProps {
   serverIsLiked: boolean
   likeCount: number
   createdAt: string
-  imageCount: number
 }
 
 export function usePostCard({
@@ -48,11 +47,9 @@ export function usePostCard({
   serverIsLiked,
   likeCount,
   createdAt,
-  imageCount,
 }: UsePostCardProps) {
   const { likedPostIds, toggleLike, setOpenCommentPostId } = usePostStore()
   const [isPending, setIsPending] = useState(false)
-  const [activeImageIndex, setActiveImageIndex] = useState(0)
 
   const isLiked = likedPostIds.has(postId) ? !serverIsLiked : serverIsLiked
   const optimisticDelta = isLiked === serverIsLiked ? 0 : isLiked ? 1 : -1
@@ -63,14 +60,6 @@ export function usePostCard({
   )
 
   const relativeTime = useMemo(() => formatRelativeTime(createdAt), [createdAt])
-
-  const goToPreviousImage = () => {
-    setActiveImageIndex((current) => (current === 0 ? imageCount - 1 : current - 1))
-  }
-
-  const goToNextImage = () => {
-    setActiveImageIndex((current) => (current === imageCount - 1 ? 0 : current + 1))
-  }
 
   const handleLike = async () => {
     if (isPending) return
@@ -97,14 +86,10 @@ export function usePostCard({
   }
 
   return {
-    activeImageIndex,
     isLiked,
     isPending,
     likeCountLabel,
     relativeTime,
-    canNavigateImages: imageCount > 1,
-    goToPreviousImage,
-    goToNextImage,
     handleLike,
     handleCommentOpen,
   }

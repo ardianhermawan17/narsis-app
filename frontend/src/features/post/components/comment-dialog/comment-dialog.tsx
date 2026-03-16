@@ -1,20 +1,22 @@
 'use client'
 
 import Image from 'next/image'
-import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/shared/components/ui/carousel'
 import type { MouseEventHandler } from 'react'
-import type { PostImage, Post } from '../../types/post.types'
+import type { Post } from '../../types/post.types'
 
 interface CommentDialogProps {
   post: Post
   open: boolean
-  activeImage?: PostImage
-  activeImageIndex: number
-  canNavigateImages: boolean
-  onPreviousImage: () => void
-  onNextImage: () => void
   onOpenChange: (open: boolean) => void
   onBackdropClick: MouseEventHandler<HTMLDivElement>
 }
@@ -22,11 +24,6 @@ interface CommentDialogProps {
 export function CommentDialogView({
   post,
   open,
-  activeImage,
-  activeImageIndex,
-  canNavigateImages,
-  onPreviousImage,
-  onNextImage,
   onOpenChange,
   onBackdropClick,
 }: CommentDialogProps) {
@@ -52,44 +49,40 @@ export function CommentDialogView({
           <X className="size-4" />
         </Button>
 
-        <div className="relative aspect-square bg-black md:aspect-auto md:min-h-160">
-          {activeImage ? (
-            <Image
-              fill
-              unoptimized
-              loader={({ src }) => src}
-              src={activeImage.url}
-              alt={activeImage.alt ?? `${post.user.username} dialog image ${activeImageIndex + 1}`}
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-            />
-          ) : null}
+        <Carousel className="relative aspect-square bg-black md:aspect-auto md:min-h-160">
+          <CarouselContent>
+            {post.images.length > 0 ? (
+              post.images.map((image, index) => (
+                <CarouselItem key={image.id}>
+                  <div className="relative aspect-square w-full">
+                    <Image
+                      fill
+                      unoptimized
+                      loader={({ src }) => src}
+                      src={image.url}
+                      alt={image.alt ?? `${post.user.username} dialog image ${index + 1}`}
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover"
+                    />
+                  </div>
+                </CarouselItem>
+              ))
+            ) : (
+              <CarouselItem>
+                <div className="flex aspect-square w-full items-center justify-center text-sm text-muted-foreground">
+                  No image available
+                </div>
+              </CarouselItem>
+            )}
+          </CarouselContent>
 
-          {canNavigateImages ? (
+          {post.images.length > 1 ? (
             <>
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon-sm"
-                className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-background/85"
-                onClick={onPreviousImage}
-                aria-label="Show previous dialog image"
-              >
-                <ChevronLeft className="size-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon-sm"
-                className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-background/85"
-                onClick={onNextImage}
-                aria-label="Show next dialog image"
-              >
-                <ChevronRight className="size-4" />
-              </Button>
+              <CarouselPrevious className="left-4 top-1/2 -translate-y-1/2" />
+              <CarouselNext className="right-4 top-1/2 -translate-y-1/2" />
             </>
           ) : null}
-        </div>
+        </Carousel>
 
         <div className="flex aspect-square flex-col justify-between bg-background p-6 md:min-h-160">
           <div className="space-y-4">

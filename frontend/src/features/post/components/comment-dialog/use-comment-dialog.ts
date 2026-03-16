@@ -1,18 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import type { MouseEvent } from 'react'
-import type { Post } from '../../types/post.types'
 
 interface UseCommentDialogProps {
-  post: Post
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function useCommentDialog({ post, open, onOpenChange }: UseCommentDialogProps) {
-  const [activeImageIndex, setActiveImageIndex] = useState(0)
-
+export function useCommentDialog({ open, onOpenChange }: UseCommentDialogProps) {
   useEffect(() => {
     if (!open) return
 
@@ -39,13 +35,6 @@ export function useCommentDialog({ post, open, onOpenChange }: UseCommentDialogP
   }
 
   return {
-    activeImageIndex,
-    activeImage: post.images[activeImageIndex],
-    canNavigateImages: post.images.length > 1,
-    goToPreviousImage: () =>
-      setActiveImageIndex((current) => (current === 0 ? post.images.length - 1 : current - 1)),
-    goToNextImage: () =>
-      setActiveImageIndex((current) => (current === post.images.length - 1 ? 0 : current + 1)),
     handleBackdropClick,
   }
 }

@@ -1,40 +1,38 @@
 'use client'
 
 import Image from 'next/image'
-import { Heart, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Heart, MessageCircle } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/shared/components/ui/carousel'
 import type { Post } from '../../types/post.types'
 
 interface PostCardProps {
   post: Post
-  activeImageIndex: number
-  canNavigateImages: boolean
   isLiked: boolean
   isPending: boolean
   likeCountLabel: string
   relativeTime: string
-  onPreviousImage: () => void
-  onNextImage: () => void
   onLike: () => void
   onComment: () => void
 }
 
 export function PostCardView({
   post,
-  activeImageIndex,
-  canNavigateImages,
   isLiked,
   isPending,
   likeCountLabel,
   relativeTime,
-  onPreviousImage,
-  onNextImage,
   onLike,
   onComment,
 }: PostCardProps) {
-  const activeImage = post.images[activeImageIndex]
   const avatarFallback = post.user.username.slice(0, 1).toUpperCase()
 
   return (
@@ -53,56 +51,40 @@ export function PostCardView({
         </div>
       </div>
 
-      <div className="relative aspect-square bg-muted/40">
-        {activeImage ? (
-          <Image
-            fill
-            unoptimized
-            loader={({ src }) => src}
-            src={activeImage.url}
-            alt={activeImage.alt ?? `${post.user.username} post image ${activeImageIndex + 1}`}
-            sizes="(max-width: 768px) 100vw, 640px"
-            className="object-cover"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            No image available
-          </div>
-        )}
+      <Carousel className="relative aspect-square bg-muted/40">
+        <CarouselContent>
+          {post.images.length > 0 ? (
+            post.images.map((image, index) => (
+              <CarouselItem key={image.id}>
+                <div className="relative aspect-square w-full">
+                  <Image
+                    fill
+                    unoptimized
+                    loader={({ src }) => src}
+                    src={image.url}
+                    alt={image.alt ?? `${post.user.username} post image ${index + 1}`}
+                    sizes="(max-width: 768px) 100vw, 640px"
+                    className="object-cover"
+                  />
+                </div>
+              </CarouselItem>
+            ))
+          ) : (
+            <CarouselItem>
+              <div className="flex aspect-square w-full items-center justify-center text-sm text-muted-foreground">
+                No image available
+              </div>
+            </CarouselItem>
+          )}
+        </CarouselContent>
 
-        {canNavigateImages ? (
+        {post.images.length > 1 ? (
           <>
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon-sm"
-              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-background/85 shadow-sm backdrop-blur"
-              onClick={onPreviousImage}
-              aria-label="Show previous image"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon-sm"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-background/85 shadow-sm backdrop-blur"
-              onClick={onNextImage}
-              aria-label="Show next image"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-background/70 px-3 py-1 backdrop-blur">
-              {post.images.map((image, index) => (
-                <span
-                  key={image.id}
-                  className={index === activeImageIndex ? 'size-2 rounded-full bg-primary' : 'size-2 rounded-full bg-foreground/20'}
-                />
-              ))}
-            </div>
+            <CarouselPrevious className="left-3 top-1/2 -translate-y-1/2" />
+            <CarouselNext className="right-3 top-1/2 -translate-y-1/2" />
           </>
         ) : null}
-      </div>
+      </Carousel>
 
       <div className="space-y-3 px-4 pb-4 pt-3">
         <div className="flex items-center gap-2">

@@ -11,17 +11,12 @@ interface CommentDialogProps {
 }
 
 export function CommentDialog({ post, open, onOpenChange }: CommentDialogProps) {
-  const logic = useCommentDialog({ post, open, onOpenChange })
+  const logic = useCommentDialog({ open, onOpenChange })
 
   return (
     <CommentDialogView
       post={post}
       open={open}
-      activeImage={logic.activeImage}
-      activeImageIndex={logic.activeImageIndex}
-      canNavigateImages={logic.canNavigateImages}
-      onPreviousImage={logic.goToPreviousImage}
-      onNextImage={logic.goToNextImage}
       onOpenChange={onOpenChange}
       onBackdropClick={logic.handleBackdropClick}
     />

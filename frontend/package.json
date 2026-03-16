@@ -23,6 +23,7 @@
     "@urql/exchange-auth": "^3.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.36.0",
     "immer": "^11.1.4",
     "lucide-react": "^0.577.0",
