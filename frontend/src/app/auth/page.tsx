@@ -1,10 +1,9 @@
-import { AuthForm } from "@feature/auth/components/auth-form";
+import { AuthForm } from '@/features/auth/components/auth-form'
 
 export default function AuthPage() {
-    return (
-        <div>
-          {/* Do something with UI Div, make sure it on center*/}
-          <AuthForm />
-        </div>
-    );
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-background p-4">
+      <AuthForm />
+    </main>
+  )
 }

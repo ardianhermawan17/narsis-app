@@ -2,19 +2,19 @@ name: narsis-app
 # author: imanuddin.ardian@gmail.com
 
 services:
-  # narsis-app-frontend-react:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: narsis-app-frontend-react
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - NODE_ENV=development
-  #   volumes:
-  #     - ./frontend:/app
-  #   depends_on:
-  #     - narsis-app-backend-php
+  narsis-app-frontend-react:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: narsis-app-frontend-react
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - narsis-app-backend-php
 
   narsis-app-backend-php:
     build:
