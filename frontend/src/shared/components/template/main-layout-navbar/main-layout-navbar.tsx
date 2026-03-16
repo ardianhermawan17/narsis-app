@@ -1,21 +1,20 @@
-import { MainLayoutNavbarDesktop } from "./main-layout-navbar-desktop"
-import { MainLayoutNavbarMobile } from "./main-layout-navbar-mobile"
-import { useMainLayoutNavbar } from "@shared/components/template/main-layout-navbar/use-main-layout-navbar"
+'use client'
 
-export function MainLayoutNavbar({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const {} = useMainLayoutNavbar()
+import { MainLayoutNavbarDesktop } from './main-layout-navbar-desktop'
+import { MainLayoutNavbarMobile } from './main-layout-navbar-mobile'
+import { useMainLayoutNavbar } from './use-main-layout-navbar'
+
+export function MainLayoutNavbar() {
+  const navProps = useMainLayoutNavbar()
+
   return (
     <>
-      <MainLayoutNavbarDesktop>
-        {children}
-      </MainLayoutNavbarDesktop>
-      <MainLayoutNavbarMobile >
-        {children}
-      </MainLayoutNavbarMobile>
+      <div className="hidden md:block">
+        <MainLayoutNavbarDesktop {...navProps} />
+      </div>
+      <div className="md:hidden">
+        <MainLayoutNavbarMobile {...navProps} />
+      </div>
     </>
   )
 }
