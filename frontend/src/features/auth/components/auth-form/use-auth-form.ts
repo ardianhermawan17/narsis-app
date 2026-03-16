@@ -1,88 +1,109 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
+import { useAuth } from '../../hooks/use-auth'
+import type { LoginFormValues, RegisterFormValues } from '../../types'
 
-import type { AuthMode, AuthFormValues } from "./types";
-import {
-    loginFailure,
-    clearAuthError,
-} from "@feature/auth/stores/auth-slice";
+const loginSchema = z.object({
+    usernameOrEmail: z.string().min(1, 'Username or email is required'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+})
 
-import {
-    useLoginMutation,
-    useSignupMutation,
-} from "@feature/auth/api/auth-api";
-import {useAppDispatch} from "@shared/config/redux/hooks";
-
-// NEED TO CHANGE FROM REDUX TO ZUSTAND (if possible) Just make sure it using GraphQL instead of REST API
+const registerSchema = z
+    .object({
+        username: z.string().min(3, 'Username must be at least 3 characters'),
+        email: z.string().email('Enter a valid email'),
+        password: z.string().min(6, 'Password must be at least 6 characters'),
+        confirmPassword: z.string(),
+    })
+    .refine((d) => d.password === d.confirmPassword, {
+        message: 'Passwords do not match',
+        path: ['confirmPassword'],
+    })
 
 export function useAuthForm() {
-    const router = useRouter();
-    const dispatch = useAppDispatch();
-    const [mode, setMode] = useState<AuthMode>("login");
+    const { login, register } = useAuth()
+    const [tab, setTab] = useState<'login' | 'register'>('login')
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [serverError, setServerError] = useState<string | null>(null)
+    const [showLoginPassword, setShowLoginPassword] = useState(false)
+    const [showRegisterPassword, setShowRegisterPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-    const [loginMutation] = useLoginMutation();
-    const [signupMutation] = useSignupMutation();
-
-    const form = useForm<AuthFormValues>({
+    const loginForm = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
         defaultValues: {
-            email: "",
-            password: "",
-            display_name: "",
+            usernameOrEmail: '',
+            password: '',
         },
-    });
+    })
 
-    const toggleMode = () => {
-        dispatch(clearAuthError());
-        setMode((prev) => (prev === "login" ? "signup" : "login"));
-    };
+    const registerForm = useForm<RegisterFormValues>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+            username: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+        },
+    })
 
-    const onSubmitHandler = async (values: AuthFormValues) => {
-        const toastId = toast.loading(
-            mode === "login" ? "Logging in..." : "Creating account..."
-        );
-        
+    const handleLogin = async (values: LoginFormValues) => {
+        setIsSubmitting(true)
+        setServerError(null)
+        const toastId = toast.loading('Logging in...')
         try {
-            if (mode === "login") {
-                await loginMutation({
-                    email: values.email,
-                    password: values.password,
-                }).unwrap();
-            } else {
-                await signupMutation({
-                    email: values.email,
-                    password: values.password,
-                    display_name: values.display_name!,
-                }).unwrap();
-            }
-
-            toast.success(
-                mode === "login"
-                    ? "Login successful!"
-                    : "Account created successfully!",
-                { id: toastId }
-            );
-
-            // Redirect after success
-            router.replace("/draft-history");
-        //     eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            const message =
-                error?.data?.message || "Authentication failed";
-
-            dispatch(loginFailure(message));
-
-            toast.error(message, { id: toastId });
+            await login(values)
+            toast.success('Login successful', { id: toastId })
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Login failed'
+            setServerError(message)
+            toast.error(message, { id: toastId })
+        } finally {
+            setIsSubmitting(false)
         }
-    };
+    }
+
+    const handleRegister = async (values: RegisterFormValues) => {
+        setIsSubmitting(true)
+        setServerError(null)
+        const toastId = toast.loading('Creating account...')
+        try {
+            await register(values)
+            toast.success('Registration successful', { id: toastId })
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Registration failed'
+            setServerError(message)
+            toast.error(message, { id: toastId })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleTabChange = (nextTab: 'login' | 'register') => {
+        setTab(nextTab)
+        setServerError(null)
+        // toast.message(nextTab === 'login' ? 'Login form selected' : 'Register form selected')
+    }
 
     return {
-        mode,
-        toggleMode,
-        form,
-        onSubmit: form.handleSubmit(onSubmitHandler),
-    };
+        tab,
+        setTab: handleTabChange,
+        isSubmitting,
+        serverError,
+        loginForm,
+        registerForm,
+        handleLogin,
+        handleRegister,
+        showConfirmPassword,
+        showRegisterPassword,
+        showLoginPassword,
+        setShowConfirmPassword,
+        setShowRegisterPassword,
+        setShowLoginPassword
+    }
 }
